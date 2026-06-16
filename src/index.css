@@ -260,6 +260,18 @@
     padding:9px 16px;border-radius:20px;white-space:nowrap;
   }
 
+  .updatebar{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(env(safe-area-inset-bottom,0px) + 78px);
+    z-index:65;display:flex;align-items:center;gap:11px;max-width:calc(100% - 28px);
+    background:var(--ink);color:var(--paper);font-family:"Work Sans",sans-serif;font-size:13px;
+    padding:8px 9px 8px 16px;border-radius:22px;box-shadow:0 10px 26px -10px rgba(0,0,0,.4);
+    animation:ubin .3s ease;
+  }
+  @keyframes ubin{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
+  .updatebar .ub-refresh{font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;background:var(--marker);color:var(--ink);border:none;border-radius:16px;padding:6px 14px;cursor:pointer;}
+  .updatebar .ub-x{background:transparent;border:none;color:rgba(251,250,245,.55);font-size:17px;line-height:1;cursor:pointer;padding:2px 5px;}
+
   .addbtn{
     margin:12px 18px 0;width:calc(100% - 36px);padding:13px;border:1.5px dashed var(--rule-strong);
     background:transparent;border-radius:var(--r);color:var(--blue);font-family:"Work Sans",sans-serif;

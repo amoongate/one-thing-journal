@@ -1,11 +1,11 @@
-// BUILD: app-phase1-v11-20260616
+// BUILD: app-phase1-v12-20260616
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
 import { DEFAULT_QUOTES } from "./assets";
 import { mountApp } from "./engine";
 import * as db from "./supabase";
 
-const BUILD = "app-phase1-v11-20260616";
+const BUILD = "app-phase1-v12-20260616";
 if (typeof window !== "undefined") window.__OTJ_BUILD = BUILD;
 
 function toISO(d) {
@@ -277,6 +277,19 @@ function AppHost({ session }) {
   );
 }
 
+function UpdateBar({ onDismiss }) {
+  const refresh = () => {
+    window.location.replace(window.location.pathname + "?u=" + Date.now());
+  };
+  return (
+    <div className="updatebar" role="status">
+      <span>New version ready</span>
+      <button className="ub-refresh" onClick={refresh}>Refresh</button>
+      <button className="ub-x" onClick={onDismiss} aria-label="Dismiss">×</button>
+    </div>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = still loading
   const [view, setView] = useState("landing");
@@ -292,16 +305,55 @@ export default function App() {
     return () => { sub.subscription.unsubscribe(); };
   }, []);
 
-  if (session === undefined) return <Loading />;
-  if (recovery) return <Recovery onDone={() => setRecovery(false)} />;
-  if (!session) {
-    if (view === "auth") return <Auth initialMode={authMode} onBack={() => setView("landing")} />;
-    return (
-      <Landing
-        onStart={() => { setAuthMode("signup"); setView("auth"); }}
-        onSignIn={() => { setAuthMode("signin"); setView("auth"); }}
-      />
-    );
+  const [updateReady, setUpdateReady] = useState(false);
+  const [updateDismissed, setUpdateDismissed] = useState(false);
+  useEffect(() => {
+    const cur = (() => {
+      const s = document.querySelector('script[src*="/assets/index-"]');
+      const m = s && s.getAttribute("src").match(/assets\/index-[A-Za-z0-9_-]+\.js/);
+      return m ? m[0] : null;
+    })();
+    if (!cur) return;
+    let stop = false;
+    const check = async () => {
+      if (stop || document.hidden) return;
+      try {
+        const r = await fetch(window.location.pathname + "?_otjv=" + Date.now(), { cache: "no-store" });
+        if (!r.ok) return;
+        const html = await r.text();
+        const m = html.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
+        if (m && m[0] !== cur) setUpdateReady(true);
+      } catch (e) {}
+    };
+    const first = setTimeout(check, 8000);
+    const iv = setInterval(check, 60000);
+    const onVis = () => { if (!document.hidden) check(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop = true; clearTimeout(first); clearInterval(iv); document.removeEventListener("visibilitychange", onVis); };
+  }, []);
+
+  let content;
+  if (session === undefined) content = <Loading />;
+  else if (recovery) content = <Recovery onDone={() => setRecovery(false)} />;
+  else if (!session) {
+    content = view === "auth"
+      ? <Auth initialMode={authMode} onBack={() => setView("landing")} />
+      : (
+        <Landing
+          onStart={() => { setAuthMode("signup"); setView("auth"); }}
+          onSignIn={() => { setAuthMode("signin"); setView("auth"); }}
+        />
+      );
+  } else {
+    content = <AppHost session={session} />;
   }
-  return <AppHost session={session} />;
+
+  return (
+    <>
+      {content}
+      {updateReady && !updateDismissed && (
+        <UpdateBar onDismiss={() => setUpdateDismissed(true)} />
+      )}
+    </>
+  );
 }
