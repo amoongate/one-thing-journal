@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v7-20260616
+// BUILD: app-phase1-v8-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -282,7 +282,7 @@ export function mountApp(root, opts){
       '<span class="onelabel">The ONE Thing</span>'+
       '<div class="hero-main">'+
         '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="one" data-i="0" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
-        '<textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea>'+
+        '<div class="hero-body"><textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea></div>'+
       '</div>'+
     '</div>';
   }
@@ -584,7 +584,7 @@ export function mountApp(root, opts){
       '<div class="fsub">Helping you finish what matters most.</div></div>';
   }
 
-  function autosize(el){ el.style.height="auto"; el.style.height=el.scrollHeight+"px"; }
+  function autosize(el){ if(el.clientWidth<80) return; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; }
   function sizeTaskFields(){ screen.querySelectorAll("textarea.t-input, textarea.q-input").forEach(autosize); }
 
   function updateTotals(){
