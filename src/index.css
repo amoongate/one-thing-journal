@@ -176,8 +176,8 @@
   .grouplbl{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);padding:15px 0 5px;}
   .grouplbl.first{padding-top:9px;}
   .grouplbl .ghint{text-transform:none;letter-spacing:0;font-style:italic;color:#b3af9f;}
-  .trow{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;background:#fff;border-radius:9px;margin-bottom:5px;}
-  .trow.alt{background:#F2F2F0;}
+  .trow{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;background:#fff;border:1px solid #DED9C8;border-radius:9px;margin-bottom:6px;}
+  .trow.alt{background:#F0ECDE;}
   .trow.done{opacity:.6;}
   .trow-body{flex:1;min-width:0;}
   .trow-line{display:flex;align-items:flex-start;gap:8px;}
