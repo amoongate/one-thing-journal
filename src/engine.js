@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v9-20260616
+// BUILD: app-phase1-v10-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -225,16 +225,12 @@ export function mountApp(root, opts){
     h+='</div>';
     if(isRestDay(date)){
       h+='<div class="restbanner">'+ICON.moon+'<span>Rest day, planning anyway.</span><button data-action="mark-rest" data-date="'+date+'">Mark as rest</button></div>';
-    } else {
-      h+='<p class="quote">“'+esc(quote.q)+'”'+(quote.a?' <span class="attr">- '+esc(quote.a)+'</span>':'')+'</p>';
     }
 
     /* install-to-home-screen prompt for new users, pinned above the plan */
     if(isToday) h+=renderInstallCard();
 
     /* hero: The ONE Thing */
-    h+='<div class="sec-head"><h2>Today\'s plan</h2></div>';
-    h+='<p class="sec-sub">Start with the one thing that makes the rest easier.</p>';
     h+=heroCard(entry.one);
 
     /* unified task list (no priority/secondary split) */
@@ -246,6 +242,11 @@ export function mountApp(root, opts){
     }
     h+='</div>';
     h+='<button class="addbtn" data-action="add-task">'+ICON.plus+' Add task</button>';
+
+    /* daily quote, sits between the plan and the time totals */
+    if(!isRestDay(date) && quote && quote.q){
+      h+='<div class="dayquote"><span class="qmk"></span><p class="dq">“'+esc(quote.q)+'”</p>'+(quote.a?'<p class="dqa">'+esc(quote.a)+'</p>':'')+'</div>';
+    }
 
     /* summary */
     var v=t.act-t.est, vcls="",vtxt="-";
