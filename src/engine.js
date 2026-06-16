@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v1-20260614
+// BUILD: app-phase1-v2-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -6,7 +6,7 @@ import { SIG, DEFAULT_QUOTES } from "./assets";
 export function mountApp(root, opts){
 
 /* ============================================================
-   One Thing Journal — mobile mockup
+   One Thing Journal: mobile mockup
    Structured for a future React port: one `state` object +
    component-style render functions + event delegation.
    In React: state -> useReducer/context, render* -> components,
@@ -209,15 +209,15 @@ export function mountApp(root, opts){
     h+='<div class="daydate">'+MONTHS[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+'</div>';
     h+='</div>';
     if(isRestDay(date)){
-      h+='<div class="restbanner">'+ICON.moon+'<span>Rest day — planning anyway.</span><button data-action="mark-rest" data-date="'+date+'">Mark as rest</button></div>';
+      h+='<div class="restbanner">'+ICON.moon+'<span>Rest day, planning anyway.</span><button data-action="mark-rest" data-date="'+date+'">Mark as rest</button></div>';
     } else {
-      h+='<p class="quote">“'+esc(quote.q)+'”'+(quote.a?' <span class="attr">— '+esc(quote.a)+'</span>':'')+'</p>';
+      h+='<p class="quote">“'+esc(quote.q)+'”'+(quote.a?' <span class="attr">- '+esc(quote.a)+'</span>':'')+'</p>';
     }
 
     /* install-to-home-screen prompt for new users, pinned above the plan */
     if(isToday) h+=renderInstallCard();
 
-    /* hero — The ONE Thing */
+    /* hero: The ONE Thing */
     h+='<div class="sec-head"><h2>Today\'s plan</h2></div>';
     h+='<p class="sec-sub">Start with the one thing that makes the rest easier.</p>';
     h+=heroCard(entry.priorities[0]);
@@ -227,9 +227,9 @@ export function mountApp(root, opts){
     h+='<div class="grouplbl first">Priority</div>';
     h+=taskRow("pri",1,entry.priorities[1]);
     h+=taskRow("pri",2,entry.priorities[2]);
-    h+='<div class="grouplbl">Secondary <span class="ghint">— if time permits</span></div>';
+    h+='<div class="grouplbl">Secondary <span class="ghint">(if time permits)</span></div>';
     if(entry.secondary.length===0){
-      h+='<div class="emptyrow">Nothing here yet — add a task or move one in.</div>';
+      h+='<div class="emptyrow">Nothing here yet. Add a task or move one in.</div>';
     } else {
       entry.secondary.forEach(function(p,i){ h+=taskRow("sec",i,p); });
     }
@@ -237,17 +237,17 @@ export function mountApp(root, opts){
     h+='<button class="addbtn" data-action="add-sec">'+ICON.plus+' Add secondary task</button>';
 
     /* summary */
-    var v=t.act-t.est, vcls="",vtxt="—";
+    var v=t.act-t.est, vcls="",vtxt="-";
     if(t.act>0){ if(v>0){vcls="over";vtxt="+"+Math.round(v)+"m";} else if(v<0){vcls="under";vtxt=Math.round(v)+"m";} else {vcls="under";vtxt="0m";} }
     h+='<div class="summary">';
     h+='<div class="metric"><div class="k">Est. total</div><div class="v" id="tot-est">'+Math.round(t.est)+'</div><div class="hm">'+hm(t.est)+'</div></div>';
     h+='<div class="metric"><div class="k">Act. total</div><div class="v" id="tot-act">'+Math.round(t.act)+'</div><div class="hm">'+hm(t.act)+'</div></div>';
-    h+='<div class="metric var"><div class="k">Variance</div><div class="v '+vcls+'" id="tot-var">'+vtxt+'</div><div class="hm">'+(t.act>0?(v>0?'over estimate':v<0?'under estimate':'spot on'):'—')+'</div></div>';
+    h+='<div class="metric var"><div class="k">Variance</div><div class="v '+vcls+'" id="tot-var">'+vtxt+'</div><div class="hm">'+(t.act>0?(v>0?'over estimate':v<0?'under estimate':'spot on'):'-')+'</div></div>';
     h+='</div>';
 
     /* reflection */
     h+='<div class="reflect"><h3>Did I allocate my time well today?</h3><div class="ratings">';
-    [["yes","On target"],["close","Close"],["off","Off — adjust"]].forEach(function(r){
+    [["yes","On target"],["close","Close"],["off","Off, adjust"]].forEach(function(r){
       h+='<button data-action="rate" data-r="'+r[0]+'" aria-pressed="'+(entry.reflection.rating===r[0])+'">'+r[1]+'</button>';
     });
     h+='</div><textarea data-action="note" placeholder="What ran long or short? One note to estimate better tomorrow.">'+esc(entry.reflection.note)+'</textarea></div>';
@@ -344,7 +344,7 @@ export function mountApp(root, opts){
     if(series.length>=2){
       var prev=series[series.length-2], d=pct(latest.acc)-pct(prev.acc);
       deltaHtml=deltaPill(latest.acc,prev.acc,'pts');
-      note=d>0?'Your estimates are getting sharper.':d<0?'Estimates slipped a little lately.':'Holding steady — consistent estimates.';
+      note=d>0?'Your estimates are getting sharper.':d<0?'Estimates slipped a little lately.':'Holding steady, consistent estimates.';
     } else { note='Keep logging to see your trend take shape.'; }
     return '<div class="trendcard"><div class="trendtop">'+
       '<div><div class="tk">Estimating accuracy</div><div class="tv">'+pct(latest.acc)+'%'+deltaHtml+'</div></div>'+
@@ -371,11 +371,11 @@ export function mountApp(root, opts){
     var curWS=weekStart(TODAY);
     var h='<div class="topbar"><h1>Journal</h1><span class="sub">'+Object.keys(entries).length+' entries</span>'+sigMark()+'</div><div class="pad" style="padding-top:0">';
 
-    /* current week — always shown, expanded */
+    /* current week: always shown, expanded */
     h+='<div class="sec-head" style="padding-left:0"><h2>This week</h2><span class="cap">'+fmtRange(curWS)+'</span></div>';
     h+=weekCard(curWS,true,true);
 
-    /* archive — past days grouped Year > Month, with week dividers inside */
+    /* archive: past days grouped Year > Month, with week dividers inside */
     var pastDates=Object.keys(entries).filter(function(d){return d<curWS;}).sort().reverse();
     if(pastDates.length){
       var months={}, order=[];
@@ -436,7 +436,7 @@ export function mountApp(root, opts){
       trackedAct+=t.act;
       days+=dayRow(date,entry,t);
     }
-    var meta=trackedAct>0?hm(trackedAct)+" tracked":"—";
+    var meta=trackedAct>0?hm(trackedAct)+" tracked":"-";
     var h='<div class="weekcard'+(isCur?' cur':'')+'">';
     if(isCur){
       h+='<div class="daylist">'+days+'</div>';
@@ -457,7 +457,7 @@ export function mountApp(root, opts){
       var v=t.act-t.est, cls=v>0?"over":"under", txt=hm(t.act)+(v>0?" · +"+Math.round(v)+"m":v<0?" · "+Math.round(v)+"m":"");
       chip='<span class="chip '+cls+'">'+txt+'</span>';
     } else if(entry){ chip='<span class="chip plan">Planned</span>'; }
-    else { chip='<span class="chip future">—</span>'; }
+    else { chip='<span class="chip future">-</span>'; }
 
     var items = entry ? entry.priorities.concat(entry.secondary).filter(function(p){return p.t;}) : [];
     var done = items.filter(function(p){return p.done;}).length;
@@ -472,7 +472,7 @@ export function mountApp(root, opts){
   function renderGuide(){
     var steps=[
       ["Plan the night before","At the end of each day, spend 5–10 minutes writing tomorrow's priority and secondary tasks. Sit down the next morning already knowing what matters."],
-      ["Estimate first","While you plan, fill the <span class=\"mark\">Estimated</span> minutes for each task. Most of us are poor at this — that's exactly why you practice it."],
+      ["Estimate first","While you plan, fill the <span class=\"mark\">Estimated</span> minutes for each task. Most of us are poor at this, which is exactly why you practice it."],
       ["Track the actual","The next day, record the <span class=\"mark\">Actual</span> time each task took. The gap between estimated and actual is how you get sharper."],
       ["Line up with goals","Make sure your ONE Thing and priorities ladder up to the bigger goals you've set for yourself."],
       ["Make it yours","Adjust anything here that doesn't fit how you work. The journal serves you, not the other way around."]
@@ -483,8 +483,8 @@ export function mountApp(root, opts){
       h+='<div class="step"><div class="n">'+(i+1)+'</div><div class="body"><h4>'+s[0]+'</h4><p>'+s[1]+'</p></div></div>';
     });
     h+='<div class="books"><div class="k">Recommended reading</div>'+
-       '<div class="b">The Effective Executive <span>— Peter Drucker</span></div>'+
-       '<div class="b">The ONE Thing <span>— Gary Keller</span></div></div>';
+       '<div class="b">The Effective Executive <span>by Peter Drucker</span></div>'+
+       '<div class="b">The ONE Thing <span>by Gary Keller</span></div></div>';
     h+='</div>';
     return h;
   }
@@ -503,18 +503,18 @@ export function mountApp(root, opts){
     h+='<div class="field"><label>Password</label><div class="inwrap"><input type="password" value="********" disabled></div><p class="fieldnote">To change your password, sign out and use Forgot password.</p></div>';
     /* rest day picker (optional) */
     h+='<div class="field"><label>Rest day <span class="opt">optional</span></label><div class="inwrap"><select data-uf2="restDay">';
-    h+='<option value=""'+(u.restDay===""?" selected":"")+'>No rest day — full 7-day week</option>';
+    h+='<option value=""'+(u.restDay===""?" selected":"")+'>No rest day, full 7-day week</option>';
     WEEKDAYS.forEach(function(w,i){ h+='<option value="'+i+'"'+(u.restDay===String(i)?" selected":"")+'>'+w+'</option>'; });
     h+='</select></div><p class="fieldnote">On your rest day the journal skips planning, hides the day, and shows no quote.</p></div>';
     h+='<button class="savebtn" data-action="save-profile">Save changes</button>';
 
-    /* daily motivation — one editable quote per weekday */
+    /* daily motivation: one editable quote per weekday */
     h+='<div class="qsection"><div class="qhead"><h3>Daily motivation</h3><button class="qreset" data-action="reset-quotes">Reset to defaults</button></div>';
-    h+='<p class="qintro">A quote for each day of the week. These are yours to start — make them your own.</p>';
+    h+='<p class="qintro">A quote for each day of the week. These are yours to start, so make them your own.</p>';
     var rIdx=restIdx();
     state.quotes.forEach(function(qt,i){
       if(i===rIdx){
-        h+='<div class="qedit rest"><div class="qday">'+WEEKDAYS[i]+'</div><div class="qrest">'+ICON.moon+'Rest day — no quote needed</div></div>';
+        h+='<div class="qedit rest"><div class="qday">'+WEEKDAYS[i]+'</div><div class="qrest">'+ICON.moon+'Rest day, no quote needed</div></div>';
         return;
       }
       h+='<div class="qedit">'+
@@ -584,7 +584,7 @@ export function mountApp(root, opts){
     if(el=screen.querySelector("#tot-est")){el.textContent=Math.round(t.est);el.parentNode.querySelector(".hm").textContent=hm(t.est);}
     if(el=screen.querySelector("#tot-act")){el.textContent=Math.round(t.act);el.parentNode.querySelector(".hm").textContent=hm(t.act);}
     if(el=screen.querySelector("#tot-var")){
-      var v=t.act-t.est, cls="", txt="—", sub="—";
+      var v=t.act-t.est, cls="", txt="-", sub="-";
       if(t.act>0){ if(v>0){cls="over";txt="+"+Math.round(v)+"m";sub="over estimate";} else if(v<0){cls="under";txt=Math.round(v)+"m";sub="under estimate";} else {cls="under";txt="0m";sub="spot on";} }
       el.className="v "+cls; el.textContent=txt; el.parentNode.querySelector(".hm").textContent=sub;
     }

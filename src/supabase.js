@@ -54,7 +54,7 @@ export async function loadData(userId, fallbackEmail) {
       email: fallbackEmail || "",
       name: "",
       phone: "",
-      rest_day: "6",
+      rest_day: null,
       quotes: DEFAULT_QUOTES,
     };
     await supabase.from("profiles").upsert(def);
