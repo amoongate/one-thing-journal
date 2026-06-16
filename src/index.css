@@ -32,12 +32,12 @@
   .app{
     width:100%;height:100dvh;min-height:100vh;
     background:var(--paper);
-    display:flex;flex-direction:column;overflow:hidden;position:relative;padding-top:env(safe-area-inset-top);
+    display:flex;flex-direction:column;overflow:hidden;position:relative;padding-top:max(env(safe-area-inset-top), 50px);
   }
   @media(min-width:480px){
     body{padding:24px 0;}
     .app{
-      width:412px;height:min(860px,94vh);min-height:0;
+      width:412px;height:min(860px,94vh);min-height:0;padding-top:0;
       border-radius:34px;
       box-shadow:0 30px 70px -28px rgba(40,36,25,.6),0 0 0 1px rgba(0,0,0,.05);
       overflow:hidden;
