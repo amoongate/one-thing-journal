@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v12-20260616
+// BUILD: app-phase1-v14-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -114,6 +114,7 @@ export function mountApp(root, opts){
     return {est:e,act:a};
   }
   function hm(min){return Math.floor(min/60)+"h "+String(Math.round(min%60)).padStart(2,"0")+"m";}
+  function hmVar(min){var r=Math.round(min),s=r>0?"+":(r<0?"-":""),a=Math.abs(r);return s+Math.floor(a/60)+"h "+String(a%60).padStart(2,"0")+"m";}
   function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
 
   /* ---- icons ---- */
@@ -250,10 +251,10 @@ export function mountApp(root, opts){
 
     /* summary */
     var v=t.act-t.est, vcls="",vtxt="-";
-    if(t.act>0){ if(v>0){vcls="over";vtxt="+"+Math.round(v)+"m";} else if(v<0){vcls="under";vtxt=Math.round(v)+"m";} else {vcls="under";vtxt="0m";} }
+    if(t.act>0){ vcls=(v>0?"over":"under"); vtxt=hmVar(v); }
     h+='<div class="summary">';
-    h+='<div class="metric"><div class="k">Est. total</div><div class="v" id="tot-est">'+Math.round(t.est)+'</div><div class="hm">'+hm(t.est)+'</div></div>';
-    h+='<div class="metric"><div class="k">Act. total</div><div class="v" id="tot-act">'+Math.round(t.act)+'</div><div class="hm">'+hm(t.act)+'</div></div>';
+    h+='<div class="metric"><div class="k">Est. total</div><div class="v" id="tot-est">'+hm(t.est)+'</div><div class="hm">'+Math.round(t.est)+' min</div></div>';
+    h+='<div class="metric"><div class="k">Act. total</div><div class="v" id="tot-act">'+hm(t.act)+'</div><div class="hm">'+Math.round(t.act)+' min</div></div>';
     h+='<div class="metric var"><div class="k">Variance</div><div class="v '+vcls+'" id="tot-var">'+vtxt+'</div><div class="hm">'+(t.act>0?(v>0?'over estimate':v<0?'under estimate':'spot on'):'-')+'</div></div>';
     h+='</div>';
 
@@ -576,6 +577,7 @@ export function mountApp(root, opts){
     renderSheet();
     sizeTaskFields();
     requestAnimationFrame(sizeTaskFields);
+    setTimeout(sizeTaskFields, 160);
     screen.scrollTop = keepScroll ? sc : 0;
   }
   function sigMark(){ return '<img class="brandsig" src="'+SIG+'" alt="Ralph Richardson">'; }
@@ -591,11 +593,11 @@ export function mountApp(root, opts){
   function updateTotals(){
     var entry=getEntry(state.activeDate), t=totals(entry);
     var el;
-    if(el=screen.querySelector("#tot-est")){el.textContent=Math.round(t.est);el.parentNode.querySelector(".hm").textContent=hm(t.est);}
-    if(el=screen.querySelector("#tot-act")){el.textContent=Math.round(t.act);el.parentNode.querySelector(".hm").textContent=hm(t.act);}
+    if(el=screen.querySelector("#tot-est")){el.textContent=hm(t.est);el.parentNode.querySelector(".hm").textContent=Math.round(t.est)+" min";}
+    if(el=screen.querySelector("#tot-act")){el.textContent=hm(t.act);el.parentNode.querySelector(".hm").textContent=Math.round(t.act)+" min";}
     if(el=screen.querySelector("#tot-var")){
       var v=t.act-t.est, cls="", txt="-", sub="-";
-      if(t.act>0){ if(v>0){cls="over";txt="+"+Math.round(v)+"m";sub="over estimate";} else if(v<0){cls="under";txt=Math.round(v)+"m";sub="under estimate";} else {cls="under";txt="0m";sub="spot on";} }
+      if(t.act>0){ cls=(v>0?"over":"under"); txt=hmVar(v); sub=(v>0?"over estimate":v<0?"under estimate":"spot on"); }
       el.className="v "+cls; el.textContent=txt; el.parentNode.querySelector(".hm").textContent=sub;
     }
   }
@@ -745,12 +747,20 @@ export function mountApp(root, opts){
   window.addEventListener("beforeinstallprompt", _bip);
   window.addEventListener("appinstalled", _ai);
 
+  function resizeFields(){ try{ sizeTaskFields(); }catch(e){} }
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(resizeFields); }
+  var _rsz=null;
+  function _onResize(){ clearTimeout(_rsz); _rsz=setTimeout(resizeFields, 120); }
+  window.addEventListener("resize", _onResize);
+
   render();
 
   return function destroy(){
     if(_saveT){ clearTimeout(_saveT); flushSave(); }
     window.removeEventListener("beforeinstallprompt", _bip);
     window.removeEventListener("appinstalled", _ai);
+    window.removeEventListener("resize", _onResize);
+    if(_rsz) clearTimeout(_rsz);
   };
 
 
