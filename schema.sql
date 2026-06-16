@@ -9,7 +9,7 @@ create table if not exists public.profiles (
   email text,
   name text default ''::text,
   phone text default ''::text,
-  rest_day text default '6',
+  rest_day text default null,
   quotes jsonb default '[{"q": "Life shrinks or expands in proportion to one''s courage.", "a": "Anaïs Nin"}, {"q": "Feel the fear and do it anyway.", "a": ""}, {"q": "You be you and let the world adjust.", "a": "Mark Groves"}, {"q": "Failure is inextricably connected to any major success I''ve ever had.", "a": "Kyle Maynard"}, {"q": "I aspire to work with people that I can work with forever.", "a": "Naval Ravikant"}, {"q": "Don''t be the hero, be the guide. Invite customers into a story.", "a": "Donald Miller"}, {"q": "Things which matter most must never be at the mercy of things which matter least.", "a": "Goethe"}]'::jsonb,
   created_at timestamptz default now()
 );
@@ -57,7 +57,7 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'name', ''),
-    '6',
+    null,
     '[{"q": "Life shrinks or expands in proportion to one''s courage.", "a": "Anaïs Nin"}, {"q": "Feel the fear and do it anyway.", "a": ""}, {"q": "You be you and let the world adjust.", "a": "Mark Groves"}, {"q": "Failure is inextricably connected to any major success I''ve ever had.", "a": "Kyle Maynard"}, {"q": "I aspire to work with people that I can work with forever.", "a": "Naval Ravikant"}, {"q": "Don''t be the hero, be the guide. Invite customers into a story.", "a": "Donald Miller"}, {"q": "Things which matter most must never be at the mercy of things which matter least.", "a": "Goethe"}]'::jsonb
   )
   on conflict (id) do nothing;
