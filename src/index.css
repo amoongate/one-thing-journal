@@ -175,7 +175,8 @@
   .grouplbl{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);padding:15px 0 5px;}
   .grouplbl.first{padding-top:9px;}
   .grouplbl .ghint{text-transform:none;letter-spacing:0;font-style:italic;color:#b3af9f;}
-  .trow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule);}
+  .trow{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;background:#fff;border-radius:9px;margin-bottom:5px;}
+  .trow.alt{background:#F2F2F0;}
   .trow.done{opacity:.6;}
   .trow-body{flex:1;min-width:0;}
   .trow-line{display:flex;align-items:flex-start;gap:8px;}
@@ -183,7 +184,7 @@
   .rowactions{display:flex;gap:4px;flex:none;margin-top:1px;}
   .hero .t-input,.trow .t-input{border-bottom:none;padding:1px 0 3px;}
   .hero.done .t-input,.trow.done .t-input{text-decoration:line-through;color:var(--ink-faint);}
-  .emptyrow{font-size:13px;color:var(--ink-faint);font-style:italic;padding:11px 2px;border-bottom:1px solid var(--rule);}
+  .emptyrow{font-size:13px;color:var(--ink-faint);font-style:italic;padding:11px 2px;}
 
   /* install-to-home-screen onboarding card */
   .installcard{margin:14px 18px 0;background:#fff;border:1px solid var(--rule-strong);border-radius:var(--r);padding:14px;position:relative;box-shadow:0 6px 18px -12px rgba(40,36,25,.5);}
@@ -462,3 +463,18 @@
 .authlink{background:none;border:none;color:var(--blue);font-family:"Work Sans",sans-serif;font-size:13.5px;cursor:pointer;padding:4px;}
 .authfoot{margin-top:auto;padding-top:18px;text-align:center;}
 .loadwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--desk);color:var(--ink-soft);font-family:"Work Sans",sans-serif;font-size:14px;}
+
+/* ============ task options panel (added v7) ============ */
+.ptimes{display:flex;gap:10px;margin:6px 0 4px;}
+.ptime{flex:1;background:var(--paper-2);border-radius:11px;padding:11px 12px;}
+.plab{display:block;font-family:"Space Mono",monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px;}
+.pin{display:flex;align-items:center;gap:6px;}
+.pin .t-time{width:62px;text-align:center;}
+.psec{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin:16px 0 8px;}
+.paneldel{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border:1px solid var(--over-bg);background:var(--over-bg);color:var(--over);border-radius:11px;font-family:"Work Sans",sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.paneldel svg{width:15px;height:15px;}
+.delconfirm{margin-top:16px;background:var(--over-bg);border-radius:11px;padding:13px 14px;display:flex;flex-direction:column;gap:11px;}
+.delconfirm>span{font-size:14px;color:var(--over);font-weight:600;text-align:center;}
+.delrow{display:flex;gap:8px;}
+.delyes{flex:1;padding:11px;border:none;border-radius:9px;background:var(--over);color:#fff;font-family:"Work Sans",sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.delno{flex:1;padding:11px;border:1px solid var(--rule-strong);border-radius:9px;background:#fff;color:var(--ink);font-family:"Work Sans",sans-serif;font-size:14px;font-weight:500;cursor:pointer;}

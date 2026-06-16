@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v6-20260616
+// BUILD: app-phase1-v7-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -130,6 +130,7 @@ export function mountApp(root, opts){
     eyeoff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4l16 16" stroke-linecap="round"/><path d="M9.5 9.7A2.6 2.6 0 0 0 12 14.5M6.5 6.9C3.9 8.4 2.5 12 2.5 12s3.5 6.5 9.5 6.5c1.5 0 2.8-.3 3.9-.8M17.5 15.2c2-1.4 4-3.2 4-3.2S18 5.5 12 5.5c-.6 0-1.2.1-1.7.2"/></svg>',
     check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l4.3 4.3L19 7.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h11" stroke-linecap="round"/><path d="M12 7.5l4.5 4.5-4.5 4.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 5.5v13" stroke-linecap="round"/></svg>',
+    dots:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>',
     moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.4A8 8 0 1 1 9.6 4 6.5 6.5 0 0 0 20 14.4z" stroke-linejoin="round"/></svg>',
     share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.5v11" stroke-linecap="round"/><path d="M8.4 7 12 3.4 15.6 7" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 10.5H6A1.5 1.5 0 0 0 4.5 12v6.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V12A1.5 1.5 0 0 0 18 10.5h-1.5" stroke-linecap="round"/></svg>'
   };
@@ -277,21 +278,19 @@ export function mountApp(root, opts){
   /* ---- Hero card: The ONE Thing ---- */
   function heroCard(p){
     return '<div class="hero'+(p.done?" done":"")+'">'+
-      '<div class="cardactions"><button class="icoact" data-action="move" data-g="one" data-i="0" aria-label="Move to another day">'+ICON.move+'</button></div>'+
+      '<div class="cardactions"><button class="icoact" data-action="open-task" data-g="one" data-i="0" aria-label="Task options">'+ICON.dots+'</button></div>'+
       '<span class="onelabel">The ONE Thing</span>'+
       '<div class="hero-main">'+
         '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="one" data-i="0" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
         '<textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea>'+
       '</div>'+
-      timeRow("one",0,p)+
     '</div>';
   }
   /* ---- Compact task row ---- */
   function taskRow(g,i,p,rowIdx){
     var ph = "Task…";
     var actions='<div class="rowactions">'+
-      '<button class="icoact" data-action="move" data-g="'+g+'" data-i="'+i+'" aria-label="Move to another day">'+ICON.move+'</button>'+
-      '<button class="icoact" data-action="rm-task" data-i="'+i+'" aria-label="Remove task">'+ICON.x+'</button>'+
+      '<button class="icoact" data-action="open-task" data-g="'+g+'" data-i="'+i+'" aria-label="Task options">'+ICON.dots+'</button>'+
     '</div>';
     return '<div class="trow'+(p.done?" done":"")+(rowIdx%2?" alt":"")+'">'+
       '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="'+g+'" data-i="'+i+'" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
@@ -300,7 +299,6 @@ export function mountApp(root, opts){
           '<textarea class="t-input" rows="1" data-g="'+g+'" data-i="'+i+'" data-f="t" placeholder="'+ph+'">'+esc(p.t)+'</textarea>'+
           actions+
         '</div>'+
-        timeRow(g,i,p)+
       '</div>'+
     '</div>';
   }
@@ -608,14 +606,23 @@ export function mountApp(root, opts){
     if(!state.move){ sheet.innerHTML=""; return; }
     var m=state.move, src=getEntry(state.activeDate);
     var item=(m.g==="one"?src.one:src.tasks[m.i])||{t:""};
+    var isOne=(m.g==="one");
     function q(label,date){return '<button class="qbtn" data-action="move-to" data-date="'+date+'">'+label+'<span class="d">'+shortDate(date)+'</span></button>';}
-    sheet.innerHTML='<div class="sheet-wrap"><div class="sheet-bd" data-action="move-cancel"></div>'+
-      '<div class="sheet" role="dialog" aria-label="Move task">'+
-        '<h3>Move to another day</h3>'+
+    function timeIn(f,lab,cls){ return '<div class="ptime"><span class="plab">'+lab+'</span><div class="pin"><input class="t-time'+(cls||"")+'" data-g="'+m.g+'" data-i="'+m.i+'" data-f="'+f+'" type="number" min="0" step="5" inputmode="numeric" value="'+esc(item[f])+'" placeholder="–" aria-label="'+lab+' minutes"><span class="unit">min</span></div></div>'; }
+    var del = isOne ? '' :
+      (m.confirmDelete
+        ? '<div class="delconfirm"><span>Delete this task?</span><div class="delrow"><button class="delyes" data-action="do-delete">Delete</button><button class="delno" data-action="cancel-delete">Keep</button></div></div>'
+        : '<button class="paneldel" data-action="ask-delete">'+ICON.x+' Delete task</button>');
+    sheet.innerHTML='<div class="sheet-wrap"><div class="sheet-bd" data-action="panel-close"></div>'+
+      '<div class="sheet" role="dialog" aria-label="Task options">'+
+        '<h3>'+(isOne?'The ONE Thing':'Task')+'</h3>'+
         '<div class="tasklbl">“'+esc(item.t||"Untitled task")+'”</div>'+
+        '<div class="ptimes">'+timeIn("e","Estimated","")+timeIn("a","Actual"," act")+'</div>'+
+        '<div class="psec">Move to another day</div>'+
         '<div class="qrow">'+q("Tomorrow",addDays(state.activeDate,1))+q("In 2 days",addDays(state.activeDate,2))+q("Next week",addDays(state.activeDate,7))+'</div>'+
         '<div class="datepick"><label>Pick a date</label><input type="date" value="'+addDays(state.activeDate,1)+'" data-action="move-date"></div>'+
-        '<button class="cancel" data-action="move-cancel">Cancel</button>'+
+        del+
+        '<button class="cancel" data-action="panel-close">Close</button>'+
       '</div></div>';
   }
   function doMove(targetDate){
@@ -639,7 +646,7 @@ export function mountApp(root, opts){
   }
 
   /* ---- input: text/number fields write to state without re-render ---- */
-  screen.addEventListener("input",function(e){
+  function onInput(e){
     var el=e.target;
     if(el.dataset.g){
       var entry=getEntry(state.activeDate);
@@ -657,7 +664,9 @@ export function mountApp(root, opts){
     }
     if(el.dataset.g||el.dataset.action==="note") markDirty(state.activeDate);
     else if(el.dataset.uf||el.dataset.q!==undefined) scheduleSave();
-  });
+  }
+  screen.addEventListener("input",onInput);
+  sheet.addEventListener("input",onInput);
 
   /* ---- clicks: shared across screen + sheet ---- */
   function onClick(e){
@@ -673,9 +682,12 @@ export function mountApp(root, opts){
       var card=t.closest(".hero,.trow,.card"); card.classList.toggle("done",item.done);
       t.classList.toggle("on",item.done); t.setAttribute("aria-pressed",item.done); markDirty(state.activeDate);
     }
-    else if(a==="move"){ state.move={g:t.dataset.g,i:+t.dataset.i}; render(true); }
+    else if(a==="open-task"){ state.move={g:t.dataset.g,i:+t.dataset.i,confirmDelete:false}; render(true); }
     else if(a==="move-to"){ doMove(t.dataset.date); }
-    else if(a==="move-cancel"){ state.move=null; render(true); }
+    else if(a==="panel-close"){ state.move=null; render(true); }
+    else if(a==="ask-delete"){ if(state.move) state.move.confirmDelete=true; render(true); }
+    else if(a==="cancel-delete"){ if(state.move) state.move.confirmDelete=false; render(true); }
+    else if(a==="do-delete"){ var dm=state.move; if(dm&&dm.g==="task"){ getEntry(state.activeDate).tasks.splice(dm.i,1); markDirty(state.activeDate); } state.move=null; render(true); showToast("Task deleted"); }
     else if(a==="pwa-install"){
       if(pwa.deferred){ pwa.deferred.prompt(); pwa.deferred.userChoice.then(function(c){ if(c&&c.outcome==="accepted") state.onboard.done=true; pwa.deferred=null; render(true); }); }
       else { state.installSheet=true; render(true); }
