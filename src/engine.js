@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v4-20260616
+// BUILD: app-phase1-v6-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -49,6 +49,19 @@ export function mountApp(root, opts){
     };
   }
   var entries = opts.data.entries || {};
+  // Upgrade any saved days from the old priorities/secondary shape to one + tasks.
+  Object.keys(entries).forEach(function(d){
+    var en=entries[d]; if(!en) return;
+    if(en.priorities){
+      var tk=(en.priorities.slice(1)||[]).concat(en.secondary||[]);
+      if(!tk.some(function(x){return x&&x.t;})) tk=[blank(),blank(),blank()];
+      entries[d]={ one:en.priorities[0]||blank(), tasks:tk, reflection:en.reflection||{rating:"",note:""} };
+    } else {
+      if(!en.one) en.one=blank();
+      if(!en.tasks) en.tasks=[];
+      if(!en.reflection) en.reflection={rating:"",note:""};
+    }
+  });
 
   /* ---- app state ---- */
   var state = {
@@ -88,15 +101,16 @@ export function mountApp(root, opts){
 
   function getEntry(date){
     if(!entries[date]){
-      entries[date] = { priorities:[blank(),blank(),blank()], secondary:[], reflection:{rating:"",note:""} };
+      entries[date] = { one:blank(), tasks:[blank(),blank(),blank()], reflection:{rating:"",note:""} };
     }
     return entries[date];
   }
   function blank(){return {t:"",e:"",a:"",done:false};}
   function num(v){var n=parseFloat(v);return isNaN(n)?0:n;}
+  function allItems(en){ return (en&&en.tasks) ? [en.one].concat(en.tasks) : []; }
   function totals(entry){
     var e=0,a=0;
-    entry.priorities.concat(entry.secondary).forEach(function(x){e+=num(x.e);a+=num(x.a);});
+    allItems(entry).forEach(function(x){e+=num(x.e);a+=num(x.a);});
     return {est:e,act:a};
   }
   function hm(min){return Math.floor(min/60)+"h "+String(Math.round(min%60)).padStart(2,"0")+"m";}
@@ -220,21 +234,17 @@ export function mountApp(root, opts){
     /* hero: The ONE Thing */
     h+='<div class="sec-head"><h2>Today\'s plan</h2></div>';
     h+='<p class="sec-sub">Start with the one thing that makes the rest easier.</p>';
-    h+=heroCard(entry.priorities[0]);
+    h+=heroCard(entry.one);
 
-    /* unified task list: priorities 2–3, then secondary */
+    /* unified task list (no priority/secondary split) */
     h+='<div class="tasklist">';
-    h+='<div class="grouplbl first">Priority</div>';
-    h+=taskRow("pri",1,entry.priorities[1]);
-    h+=taskRow("pri",2,entry.priorities[2]);
-    h+='<div class="grouplbl">Secondary <span class="ghint">(if time permits)</span></div>';
-    if(entry.secondary.length===0){
-      h+='<div class="emptyrow">Nothing here yet. Add a task or move one in.</div>';
+    if(entry.tasks.length===0){
+      h+='<div class="emptyrow">No tasks yet. Add one below.</div>';
     } else {
-      entry.secondary.forEach(function(p,i){ h+=taskRow("sec",i,p); });
+      entry.tasks.forEach(function(p,i){ h+=taskRow("task",i,p,i); });
     }
     h+='</div>';
-    h+='<button class="addbtn" data-action="add-sec">'+ICON.plus+' Add secondary task</button>';
+    h+='<button class="addbtn" data-action="add-task">'+ICON.plus+' Add task</button>';
 
     /* summary */
     var v=t.act-t.est, vcls="",vtxt="-";
@@ -267,23 +277,23 @@ export function mountApp(root, opts){
   /* ---- Hero card: The ONE Thing ---- */
   function heroCard(p){
     return '<div class="hero'+(p.done?" done":"")+'">'+
-      '<div class="cardactions"><button class="icoact" data-action="move" data-g="pri" data-i="0" aria-label="Move to another day">'+ICON.move+'</button></div>'+
+      '<div class="cardactions"><button class="icoact" data-action="move" data-g="one" data-i="0" aria-label="Move to another day">'+ICON.move+'</button></div>'+
       '<span class="onelabel">The ONE Thing</span>'+
       '<div class="hero-main">'+
-        '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="pri" data-i="0" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
-        '<textarea class="t-input" rows="1" data-g="pri" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea>'+
+        '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="one" data-i="0" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
+        '<textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea>'+
       '</div>'+
-      timeRow("pri",0,p)+
+      timeRow("one",0,p)+
     '</div>';
   }
-  /* ---- Compact list row: priorities 2–3 and secondary ---- */
-  function taskRow(g,i,p){
-    var ph = g==="sec" ? "To-do…" : "Priority task…";
+  /* ---- Compact task row ---- */
+  function taskRow(g,i,p,rowIdx){
+    var ph = "Task…";
     var actions='<div class="rowactions">'+
       '<button class="icoact" data-action="move" data-g="'+g+'" data-i="'+i+'" aria-label="Move to another day">'+ICON.move+'</button>'+
-      (g==="sec" ? '<button class="icoact" data-action="rm-sec" data-i="'+i+'" aria-label="Remove task">'+ICON.x+'</button>' : '')+
+      '<button class="icoact" data-action="rm-task" data-i="'+i+'" aria-label="Remove task">'+ICON.x+'</button>'+
     '</div>';
-    return '<div class="trow'+(p.done?" done":"")+'">'+
+    return '<div class="trow'+(p.done?" done":"")+(rowIdx%2?" alt":"")+'">'+
       '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="'+g+'" data-i="'+i+'" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
       '<div class="trow-body">'+
         '<div class="trow-line">'+
@@ -302,7 +312,7 @@ export function mountApp(root, opts){
     var accs=[], est=0, act=0;
     dates.forEach(function(d){
       var entry=entries[d]; if(!entry) return;
-      entry.priorities.concat(entry.secondary).forEach(function(x){
+      allItems(entry).forEach(function(x){
         var e=num(x.e), a=num(x.a);
         if(e>0 && a>0){ accs.push(Math.min(e,a)/Math.max(e,a)); est+=e; act+=a; }
       });
@@ -450,7 +460,7 @@ export function mountApp(root, opts){
   }
   function dayRow(date,entry,t){
     var d=parseISO(date), isToday=(date===TODAY), isFuture=(date>TODAY);
-    var head=(entry&&entry.priorities[0].t)?esc(entry.priorities[0].t):"";
+    var head=(entry&&entry.one&&entry.one.t)?esc(entry.one.t):"";
     var chip="";
     if(isFuture){ chip='<span class="chip future">·</span>'; }
     else if(entry&&t.act>0){
@@ -459,7 +469,7 @@ export function mountApp(root, opts){
     } else if(entry){ chip='<span class="chip plan">Planned</span>'; }
     else { chip='<span class="chip future">-</span>'; }
 
-    var items = entry ? entry.priorities.concat(entry.secondary).filter(function(p){return p.t;}) : [];
+    var items = allItems(entry).filter(function(p){return p.t;});
     var done = items.filter(function(p){return p.done;}).length;
     var sub = entry ? (items.length ? done+" of "+items.length+" done" : "No tasks") : (isFuture?"Upcoming":"No entry");
     return '<div class="dayrow'+(isToday?' today':'')+'" data-action="open-day" data-date="'+date+'">'+
@@ -471,10 +481,10 @@ export function mountApp(root, opts){
   /* ============ render: GUIDE ============ */
   function renderGuide(){
     var steps=[
-      ["Plan the night before","At the end of each day, spend 5–10 minutes writing tomorrow's priority and secondary tasks. Sit down the next morning already knowing what matters."],
+      ["Plan the night before","At the end of each day, spend 5–10 minutes writing tomorrow's ONE Thing and your tasks. Sit down the next morning already knowing what matters."],
       ["Estimate first","While you plan, fill the <span class=\"mark\">Estimated</span> minutes for each task. Most of us are poor at this, which is exactly why you practice it."],
       ["Track the actual","The next day, record the <span class=\"mark\">Actual</span> time each task took. The gap between estimated and actual is how you get sharper."],
-      ["Line up with goals","Make sure your ONE Thing and priorities ladder up to the bigger goals you've set for yourself."],
+      ["Line up with goals","Make sure your ONE Thing and your tasks ladder up to the bigger goals you've set for yourself."],
       ["Make it yours","Adjust anything here that doesn't fit how you work. The journal serves you, not the other way around."]
     ];
     var h='<div class="topbar"><h1>How to use it</h1>'+sigMark()+'</div><div class="guide">';
@@ -597,7 +607,7 @@ export function mountApp(root, opts){
     if(state.installSheet){ sheet.innerHTML=installSheetHTML(); return; }
     if(!state.move){ sheet.innerHTML=""; return; }
     var m=state.move, src=getEntry(state.activeDate);
-    var item=(m.g==="pri"?src.priorities:src.secondary)[m.i]||{t:""};
+    var item=(m.g==="one"?src.one:src.tasks[m.i])||{t:""};
     function q(label,date){return '<button class="qbtn" data-action="move-to" data-date="'+date+'">'+label+'<span class="d">'+shortDate(date)+'</span></button>';}
     sheet.innerHTML='<div class="sheet-wrap"><div class="sheet-bd" data-action="move-cancel"></div>'+
       '<div class="sheet" role="dialog" aria-label="Move task">'+
@@ -611,12 +621,11 @@ export function mountApp(root, opts){
   function doMove(targetDate){
     var m=state.move; if(!m||!targetDate){ state.move=null; render(true); return; }
     var src=getEntry(state.activeDate);
-    var list=m.g==="pri"?src.priorities:src.secondary;
-    var item=list[m.i]; if(!item){ state.move=null; render(true); return; }
+    var item=(m.g==="one"?src.one:src.tasks[m.i]); if(!item){ state.move=null; render(true); return; }
     var moved={t:item.t,e:item.e,a:"",done:false};   /* carry plan + estimate, reset actual */
-    if(m.g==="pri"){ src.priorities[m.i]=blank(); }   /* keep the 3 slots, clear this one */
-    else { src.secondary.splice(m.i,1); }
-    getEntry(targetDate).secondary.push(moved);        /* lands as a candidate on the new day */
+    if(m.g==="one"){ src.one=blank(); }                /* clear the ONE Thing on this day */
+    else { src.tasks.splice(m.i,1); }
+    getEntry(targetDate).tasks.push(moved);            /* lands as a task on the new day */
     markDirty(state.activeDate); markDirty(targetDate);
     state.move=null;
     render(true);
@@ -634,8 +643,8 @@ export function mountApp(root, opts){
     var el=e.target;
     if(el.dataset.g){
       var entry=getEntry(state.activeDate);
-      var list=el.dataset.g==="pri"?entry.priorities:entry.secondary;
-      list[+el.dataset.i][el.dataset.f]=el.value;
+      var obj=el.dataset.g==="one"?entry.one:entry.tasks[+el.dataset.i];
+      if(obj) obj[el.dataset.f]=el.value;
       if(el.dataset.f==="e"||el.dataset.f==="a") updateTotals();
       else if(el.tagName==="TEXTAREA") autosize(el);
     } else if(el.dataset.uf){
@@ -654,12 +663,12 @@ export function mountApp(root, opts){
   function onClick(e){
     var t=e.target.closest("[data-action]"); if(!t) return;
     var a=t.dataset.action;
-    if(a==="add-sec"){ getEntry(state.activeDate).secondary.push(blank()); markDirty(state.activeDate); render(true);
-      var ins=screen.querySelectorAll('[data-g="sec"][data-f="t"]'); if(ins.length) ins[ins.length-1].focus(); }
-    else if(a==="rm-sec"){ getEntry(state.activeDate).secondary.splice(+t.dataset.i,1); markDirty(state.activeDate); render(true); }
+    if(a==="add-task"){ getEntry(state.activeDate).tasks.push(blank()); markDirty(state.activeDate); render(true);
+      var ins=screen.querySelectorAll('[data-g="task"][data-f="t"]'); if(ins.length) ins[ins.length-1].focus(); }
+    else if(a==="rm-task"){ getEntry(state.activeDate).tasks.splice(+t.dataset.i,1); markDirty(state.activeDate); render(true); }
     else if(a==="toggle-done"){
       var entry=getEntry(state.activeDate);
-      var item=(t.dataset.g==="pri"?entry.priorities:entry.secondary)[+t.dataset.i];
+      var item=(t.dataset.g==="one"?entry.one:entry.tasks[+t.dataset.i]);
       item.done=!item.done;
       var card=t.closest(".hero,.trow,.card"); card.classList.toggle("done",item.done);
       t.classList.toggle("on",item.done); t.setAttribute("aria-pressed",item.done); markDirty(state.activeDate);
