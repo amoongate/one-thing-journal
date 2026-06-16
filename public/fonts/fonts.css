@@ -1,0 +1,52 @@
+/* One Thing Journal: self-hosted fonts.
+   Place this folder where your build serves static assets (Vite: public/fonts),
+   then import this file once. Paths are relative to this css file.
+   Families: Spectral (display, quotes), Work Sans (body, UI), Space Mono (data, labels).
+   Licensed under the SIL Open Font License 1.1. See the OFL text files in this folder. */
+
+/* Spectral: display and quotes */
+@font-face{
+  font-family:"Spectral";font-style:normal;font-weight:400;font-display:swap;
+  src:url("./Spectral-Regular.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Spectral";font-style:normal;font-weight:500;font-display:swap;
+  src:url("./Spectral-Medium.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Spectral";font-style:normal;font-weight:600;font-display:swap;
+  src:url("./Spectral-SemiBold.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Spectral";font-style:italic;font-weight:400;font-display:swap;
+  src:url("./Spectral-Italic.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Spectral";font-style:italic;font-weight:500;font-display:swap;
+  src:url("./Spectral-MediumItalic.woff2") format("woff2");
+}
+
+/* Work Sans: body and UI (variable, covers 400 to 600) */
+@font-face{
+  font-family:"Work Sans";font-style:normal;font-weight:400 600;font-display:swap;
+  src:url("./WorkSans-var.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Work Sans";font-style:italic;font-weight:400 600;font-display:swap;
+  src:url("./WorkSans-Italic-var.woff2") format("woff2");
+}
+
+/* Space Mono: times, totals, labels */
+@font-face{
+  font-family:"Space Mono";font-style:normal;font-weight:400;font-display:swap;
+  src:url("./SpaceMono-Regular.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Space Mono";font-style:normal;font-weight:700;font-display:swap;
+  src:url("./SpaceMono-Bold.woff2") format("woff2");
+}
+
+/* token reference (matches the style guide)
+   --font-display: "Spectral", Georgia, serif;
+   --font-body:    "Work Sans", system-ui, sans-serif;
+   --font-mono:    "Space Mono", ui-monospace, monospace; */
