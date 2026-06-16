@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v2-20260616
+// BUILD: app-phase1-v3-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -566,6 +566,7 @@ export function mountApp(root, opts){
     nav.innerHTML=renderNav();
     renderSheet();
     sizeTaskFields();
+    requestAnimationFrame(sizeTaskFields);
     screen.scrollTop = keepScroll ? sc : 0;
   }
   function sigMark(){ return '<img class="brandsig" src="'+SIG+'" alt="Ralph Richardson">'; }
