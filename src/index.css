@@ -132,6 +132,15 @@
   .t-time:focus{outline:none;border-color:var(--blue);color:var(--ink);box-shadow:0 0 0 2px rgba(44,74,135,.1);}
   .t-time.act{background:#FFFDF4;}
   .unit{font-family:"Space Mono",monospace;font-size:9.5px;color:var(--ink-faint);margin-left:1px;}
+  .t-sel{
+    font-family:"Space Mono",monospace;font-size:12.5px;color:var(--ink);width:100%;
+    border:1px solid var(--rule);border-radius:7px;background-color:var(--paper);padding:7px 26px 7px 9px;
+    appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23928E80' stroke-width='1.5'/></svg>");
+    background-repeat:no-repeat;background-position:right 9px center;
+  }
+  .t-sel:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(44,74,135,.1);}
+  .t-sel.act{background-color:#FFFDF4;}
   .yeardiv{font-family:"Spectral",serif;font-weight:600;font-size:13px;color:var(--ink-faint);letter-spacing:.5px;margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--rule);}
   .weekdiv{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);padding:10px 14px 3px;}
   .weekdiv .wkacc{color:var(--ink-faint);}
@@ -475,6 +484,7 @@
 .plab{display:block;font-family:"Space Mono",monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px;}
 .pin{display:flex;align-items:center;gap:6px;}
 .pin .t-time{width:62px;text-align:center;}
+.pin .t-sel{width:100%;}
 .psec{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin:16px 0 8px;}
 .paneldel{width:100%;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border:1px solid var(--over-bg);background:var(--over-bg);color:var(--over);border-radius:11px;font-family:"Work Sans",sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
 .paneldel svg{width:15px;height:15px;}

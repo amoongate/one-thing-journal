@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v10-20260616
+// BUILD: app-phase1-v11-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -609,7 +609,15 @@ export function mountApp(root, opts){
     var item=(m.g==="one"?src.one:src.tasks[m.i])||{t:""};
     var isOne=(m.g==="one");
     function q(label,date){return '<button class="qbtn" data-action="move-to" data-date="'+date+'">'+label+'<span class="d">'+shortDate(date)+'</span></button>';}
-    function timeIn(f,lab,cls){ return '<div class="ptime"><span class="plab">'+lab+'</span><div class="pin"><input class="t-time'+(cls||"")+'" data-g="'+m.g+'" data-i="'+m.i+'" data-f="'+f+'" type="number" min="0" step="5" inputmode="numeric" value="'+esc(item[f])+'" placeholder="–" aria-label="'+lab+' minutes"><span class="unit">min</span></div></div>'; }
+    var TIME_OPTS=[15,30,45,60,90,120,150,180,210,240,270,300,330,360,390,420,450,480];
+    function durLabel(mn){ var h=Math.floor(mn/60),mm=mn%60; return h===0?(mm+" min"):(mm===0?(h+" hr"):(h+" hr "+mm+" min")); }
+    function timeIn(f,lab,cls){
+      var raw=item[f], cur=(raw===""||raw==null)?"":String(raw); if(cur==="0") cur="";
+      var opts='<option value="">Set time</option>', have=false;
+      for(var k=0;k<TIME_OPTS.length;k++){ var v=String(TIME_OPTS[k]), s=(v===cur); if(s) have=true; opts+='<option value="'+v+'"'+(s?' selected':'')+'>'+durLabel(TIME_OPTS[k])+'</option>'; }
+      if(cur!=="" && !have) opts+='<option value="'+esc(cur)+'" selected>'+esc(cur)+' min</option>';
+      return '<div class="ptime"><span class="plab">'+lab+'</span><div class="pin"><select class="t-sel'+(cls||"")+'" data-g="'+m.g+'" data-i="'+m.i+'" data-f="'+f+'" aria-label="'+lab+' time">'+opts+'</select></div></div>';
+    }
     var del = isOne ? '' :
       (m.confirmDelete
         ? '<div class="delconfirm"><span>Delete this task?</span><div class="delrow"><button class="delyes" data-action="do-delete">Delete</button><button class="delno" data-action="cancel-delete">Keep</button></div></div>'
@@ -719,7 +727,10 @@ export function mountApp(root, opts){
     if(e.target.dataset.uf2==="restDay"){ state.user.restDay=e.target.value; scheduleSave(); render(true); }
   });
   sheet.addEventListener("click",onClick);
-  sheet.addEventListener("change",function(e){ if(e.target.dataset.action==="move-date"){ doMove(e.target.value); } });
+  sheet.addEventListener("change",function(e){
+    if(e.target.dataset.action==="move-date"){ doMove(e.target.value); }
+    else if(e.target.dataset.f==="e"||e.target.dataset.f==="a"){ onInput(e); }
+  });
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
