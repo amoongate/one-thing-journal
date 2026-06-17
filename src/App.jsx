@@ -1,11 +1,11 @@
-// BUILD: app-phase1-v26-20260617
+// BUILD: app-phase1-v27-20260617
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
 import { DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS, DEFAULT_GOALS } from "./assets";
 import { mountApp } from "./engine";
 import * as db from "./supabase";
 
-const BUILD = "app-phase1-v26-20260617";
+const BUILD = "app-phase1-v27-20260617";
 if (typeof window !== "undefined") window.__OTJ_BUILD = BUILD;
 
 function toISO(d) {
@@ -239,7 +239,7 @@ function AppHost({ session }) {
       .then((d) => { if (on) setData(d); })
       .catch((e) => {
         console.error("load failed", e);
-        if (on) setData({ user: { name: "", email: session.user.email, phone: "", restDay: "" }, quotes: DEFAULT_QUOTES, categories: DEFAULT_CATS, goalCategories: DEFAULT_GOAL_CATS, goals: DEFAULT_GOALS, entries: {} });
+        if (on) setData({ user: { name: "", title: "", email: session.user.email, phone: "", restDay: "" }, quotes: DEFAULT_QUOTES, categories: DEFAULT_CATS, goalCategories: DEFAULT_GOAL_CATS, goals: DEFAULT_GOALS, entries: {} });
       });
     return () => { on = false; };
   }, [session.user.id]);

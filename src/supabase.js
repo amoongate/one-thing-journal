@@ -53,6 +53,7 @@ export async function loadData(userId, fallbackEmail) {
       id: userId,
       email: fallbackEmail || "",
       name: "",
+      title: "",
       phone: "",
       rest_day: null,
       quotes: DEFAULT_QUOTES,
@@ -82,6 +83,7 @@ export async function loadData(userId, fallbackEmail) {
   return {
     user: {
       name: profile.name || "",
+      title: profile.title || "",
       email: profile.email || fallbackEmail || "",
       phone: profile.phone || "",
       restDay,
@@ -108,6 +110,7 @@ export function saveProfile(userId, user, quotes, categories, goalCategories, go
     .from("profiles")
     .update({
       name: user.name,
+      title: user.title,
       phone: user.phone,
       rest_day: user.restDay === "" ? null : user.restDay,
       quotes,

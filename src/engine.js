@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v26-20260617
+// BUILD: app-phase1-v27-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -592,7 +592,7 @@ export function mountApp(root, opts){
     var nGCat=(state.goalCategories||[]).length;
     var h='<div class="topbar"><h1>Profile</h1>'+sigMark()+'</div><div class="profile">';
     h+='<div class="avatar">'+esc(initials||"?")+'</div>';
-    h+='<div class="pname">'+esc(u.name)+'</div><div class="prole">Realtor & Listing Agent</div>';
+    h+='<div class="pname">'+esc(u.name)+'</div>'+(u.title?'<div class="prole">'+esc(u.title)+'</div>':'');
     h+='<div class="pmenu">';
     h+=hubRow("account","t-acct",ICON.profile,"Account","Name, email, phone, rest day",chevR);
     h+=hubRow("motivation","t-quote",qIco,"Daily motivation","A quote for each weekday",chevR);
@@ -613,6 +613,7 @@ export function mountApp(root, opts){
     var u=state.user;
     var h=profileSubTop("Account")+'<div class="profile">';
     h+=field("name","Full name","text",u.name);
+    h+=field("title",'Title <span class="opt">optional</span>',"text",u.title||"");
     h+='<div class="field"><label>Email</label><div class="inwrap"><input type="email" value="'+esc(u.email)+'" disabled></div></div>';
     h+=field("phone","Phone","tel",u.phone);
     h+='<div class="field"><label>Password</label><div class="inwrap"><input type="password" value="********" disabled></div><p class="fieldnote">To change your password, sign out and use Forgot password.</p></div>';
