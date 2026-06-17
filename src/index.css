@@ -551,12 +551,14 @@
     flex:1;background:none;border:none;cursor:pointer;padding:9px 0 10px;
     display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-faint);
   }
-  .navitem svg{width:23px;height:23px;}
-  .navitem span{font-size:10.5px;font-family:"Work Sans",sans-serif;}
+  .navitem svg{width:24px;height:24px;}
+  .navitem .fillable{fill:none;}
+  .navitem .navlabel{font-size:10.5px;font-family:"Work Sans",sans-serif;}
+  .navitem .navmark{display:block;width:22px;height:4px;border-radius:3px;background:transparent;margin-top:1px;}
   .navitem[aria-current="true"]{color:var(--ink);}
-  .navitem[aria-current="true"] .dot{
-    position:absolute;top:0;width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--marker);
-  }
+  .navitem[aria-current="true"] .navlabel{font-weight:600;}
+  .navitem[aria-current="true"] .fillable{fill:var(--marker);}
+  .navitem[aria-current="true"] .navmark{background:var(--marker);}
   .navitem{position:relative;}
 
   .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}

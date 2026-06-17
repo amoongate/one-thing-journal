@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v29-20260617
+// BUILD: app-phase1-v30-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -177,11 +177,11 @@ export function mountApp(root, opts){
 
   /* ---- icons ---- */
   var ICON = {
-    today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M3.5 9h17M8 3v3M16 3v3"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
-    journal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4.5h11a2.5 2.5 0 0 1 2.5 2.5v12.5H7.5A2.5 2.5 0 0 1 5 19V4.5z"/><path d="M5 4.5v15M9 8.5h6M9 12h6"/></svg>',
+    today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect class="fillable" x="3.5" y="5.5" width="17" height="15" rx="3.4"/><path d="M3.5 10h17"/><path d="M8 3.3v3.3M16 3.3v3.3"/><rect x="12.6" y="12.7" width="4.7" height="4.7" rx="1.3" fill="currentColor" stroke="none"/></svg>',
+    journal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect class="fillable" x="4.5" y="4" width="15" height="16" rx="2.6"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg>',
     guide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.05" fill="currentColor" stroke="none"/></svg>',
-    goals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4v16" stroke-linecap="round"/><path d="M6 5h11l-2.2 3.2L17 11.5H6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    profile:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5a7 7 0 0 1 14 0" stroke-linecap="round"/></svg>',
+    goals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.4v17.2"/><path class="fillable" d="M6 4.6h11.4l-2.7 4 2.7 4H6z"/></svg>',
+    profile:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle class="fillable" cx="12" cy="8" r="3.9"/><path class="fillable" d="M5 20a7 7 0 0 1 14 0"/></svg>',
     back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14.5 5.5 8 12l6.5 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5.5v13M5.5 12h13" stroke-linecap="round"/></svg>',
@@ -760,7 +760,7 @@ export function mountApp(root, opts){
     return items.map(function(it){
       var on=active===it[0];
       return '<button class="navitem" data-action="nav" data-view="'+it[0]+'" aria-current="'+on+'">'+
-        (on?'<span class="dot"></span>':'')+ICON[it[0]]+'<span>'+it[1]+'</span></button>';
+        ICON[it[0]]+'<span class="navlabel">'+it[1]+'</span><span class="navmark"></span></button>';
     }).join("");
   }
 
