@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v20-20260616
+// BUILD: app-phase1-v21-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
@@ -124,7 +124,7 @@ export function mountApp(root, opts){
   function catById(id){var cs=state.categories||[];for(var k=0;k<cs.length;k++){if(cs[k].id===id)return cs[k];}return null;}
   function catTag(p){if(!p.cat)return "";var c=catById(p.cat);if(!c)return "";return '<span class="ctag" style="background:'+tint(c.color)+';color:'+c.color+'"><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</span>';}
   function catChips(it){var cs=state.categories||[],out="";for(var k=0;k<cs.length;k++){var c=cs[k],sel=(it.cat===c.id);out+='<button class="cchip'+(sel?" sel":"")+'" data-action="set-cat" data-cat="'+c.id+'"'+(sel?(' style="background:'+tint(c.color)+';color:'+c.color+'"'):"")+'><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</button>';}return out;}
-  function metaInner(p){var ct=catTag(p);var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0,ts="";if(e&&a){var cls=a<=e?"good":"over";ts='<span class="est">'+dur(e)+'</span> \u2192 <span class="'+cls+'">'+dur(a)+'</span>';}else if(e){ts='<span class="est">'+dur(e)+'</span>';}else if(a){ts='<span class="good">'+dur(a)+'</span>';}if(!ct&&!ts)return "";return ct+(ts?'<span class="time">'+ts+'</span>':"");}
+  function metaInner(p){var ct=catTag(p);var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0,ts="";if(e&&a){ts="Est "+dur(e)+" \u00b7 Act "+dur(a);}else if(e){ts="Est "+dur(e);}else if(a){ts="Act "+dur(a);}if(!ct&&!ts)return "";return ct+(ts?'<span class="time">'+ts+'</span>':"");}
   function catRows(items){
     var anyAct=false;
     items.forEach(function(p){ if((parseInt(p.a,10)||0)>0) anyAct=true; });
