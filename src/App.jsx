@@ -1,11 +1,11 @@
-// BUILD: app-phase1-v22-20260616
+// BUILD: app-phase1-v23-20260617
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
 import { DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
 import { mountApp } from "./engine";
 import * as db from "./supabase";
 
-const BUILD = "app-phase1-v22-20260616";
+const BUILD = "app-phase1-v23-20260617";
 if (typeof window !== "undefined") window.__OTJ_BUILD = BUILD;
 
 function toISO(d) {

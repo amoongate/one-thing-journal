@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v22-20260616
+// BUILD: app-phase1-v23-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
@@ -74,6 +74,7 @@ export function mountApp(root, opts){
     catDel: null,           /* category id pending delete confirmation */
     summaryPeriod: "week",  /* journal summary scope: week | month | ytd */
     planTomorrow: false,    /* Today tab: plan tomorrow instead of today */
+    profilePage: null,      /* Profile sub-page: null hub | account | motivation | categories */
     overrideRest: {},       /* dates where the user chose to plan despite it being a rest day */
     onboard: { done:false, dismissed:false },  /* install-to-home-screen card; gate on a new-user flag in the real build */
     installSheet: false,    /* iOS / fallback instructions modal */
@@ -557,26 +558,65 @@ export function mountApp(root, opts){
 
   /* ============ render: PROFILE ============ */
   function renderProfile(){
+    var p=state.profilePage;
+    if(p==="account") return profileAccount();
+    if(p==="motivation") return profileMotivation();
+    if(p==="categories") return profileCategories();
+    return profileHub();
+  }
+
+  function hubRow(page,tcls,icon,title,sub,chev){
+    return '<button class="prow" data-action="profile-page" data-page="'+page+'">'+
+      '<span class="ptile '+tcls+'">'+icon+'</span>'+
+      '<span class="pmt"><b>'+title+'</b><span>'+esc(sub)+'</span></span>'+
+      '<span class="pchev">'+chev+'</span>'+
+    '</button>';
+  }
+
+  function profileHub(){
     var u=state.user;
     var initials=u.name.split(/\s+/).map(function(w){return w[0];}).slice(0,2).join("").toUpperCase();
+    var qIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 7h4v4c0 2.2-1.3 3.4-3.4 4M14 7h4v4c0 2.2-1.3 3.4-3.4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var cIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6.5h16M4 12h16M4 17.5h10" stroke-linecap="round"/></svg>';
+    var chevR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 5.5 15.5 12 9 18.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var nCat=state.categories.length;
     var h='<div class="topbar"><h1>Profile</h1>'+sigMark()+'</div><div class="profile">';
     h+='<div class="avatar">'+esc(initials||"?")+'</div>';
     h+='<div class="pname">'+esc(u.name)+'</div><div class="prole">Realtor & Listing Agent</div>';
+    h+='<div class="pmenu">';
+    h+=hubRow("account","t-acct",ICON.profile,"Account","Name, email, phone, rest day",chevR);
+    h+=hubRow("motivation","t-quote",qIco,"Daily motivation","A quote for each weekday",chevR);
+    h+=hubRow("categories","t-cat",cIco,"Task categories",nCat+" categor"+(nCat===1?"y":"ies"),chevR);
+    h+='</div>';
+    h+='<button class="signout" data-action="signout">Sign out</button>';
+    h+='</div>';
+    return h;
+  }
+
+  function profileSubTop(title){
+    return '<div class="topbar"><button class="iconbtn" data-action="profile-back" aria-label="Back to profile">'+ICON.back+'</button><h1>'+title+'</h1></div>';
+  }
+
+  function profileAccount(){
+    var u=state.user;
+    var h=profileSubTop("Account")+'<div class="profile">';
     h+=field("name","Full name","text",u.name);
     h+='<div class="field"><label>Email</label><div class="inwrap"><input type="email" value="'+esc(u.email)+'" disabled></div></div>';
     h+=field("phone","Phone","tel",u.phone);
-    /* password is managed through the secure reset flow, not stored here */
     h+='<div class="field"><label>Password</label><div class="inwrap"><input type="password" value="********" disabled></div><p class="fieldnote">To change your password, sign out and use Forgot password.</p></div>';
-    /* rest day picker (optional) */
     h+='<div class="field"><label>Rest day <span class="opt">optional</span></label><div class="inwrap"><select data-uf2="restDay">';
     h+='<option value=""'+(u.restDay===""?" selected":"")+'>No rest day, full 7-day week</option>';
     WEEKDAYS.forEach(function(w,i){ h+='<option value="'+i+'"'+(u.restDay===String(i)?" selected":"")+'>'+w+'</option>'; });
     h+='</select></div><p class="fieldnote">On your rest day the journal skips planning, hides the day, and shows no quote.</p></div>';
     h+='<button class="savebtn" data-action="save-profile">Save changes</button>';
+    h+='</div>';
+    return h;
+  }
 
-    /* daily motivation: one editable quote per weekday */
-    h+='<div class="qsection"><div class="qhead"><h3>Daily motivation</h3><button class="qreset" data-action="reset-quotes">Reset to defaults</button></div>';
+  function profileMotivation(){
+    var h=profileSubTop("Daily motivation")+'<div class="profile">';
     h+='<p class="qintro">A quote for each day of the week. These are yours to start, so make them your own.</p>';
+    h+='<div class="qhead page"><button class="qreset" data-action="reset-quotes">Reset to defaults</button></div>';
     var rIdx=restIdx();
     state.quotes.forEach(function(qt,i){
       if(i===rIdx){
@@ -590,8 +630,11 @@ export function mountApp(root, opts){
       '</div>';
     });
     h+='</div>';
+    return h;
+  }
 
-    h+='<div class="csection"><div class="chead"><h3>Task categories</h3></div>';
+  function profileCategories(){
+    var h=profileSubTop("Task categories")+'<div class="profile">';
     h+='<p class="cintro">Tag tasks by type. Add, rename, recolor, or remove. These are yours.</p>';
     h+='<div class="catlist">';
     state.categories.forEach(function(c){
@@ -607,8 +650,6 @@ export function mountApp(root, opts){
     });
     h+='</div>';
     h+='<button class="addcat" data-action="add-cat">'+ICON.plus+' Add category</button>';
-    h+='</div>';
-    h+='<button class="signout" data-action="signout">Sign out</button>';
     h+='</div>';
     return h;
   }
@@ -802,6 +843,8 @@ export function mountApp(root, opts){
     else if(a==="back"){ state.view="journal"; render(); }
     else if(a==="open-day"){ state.activeDate=t.dataset.date; state.view="day"; render(); }
     else if(a==="toggle-tomorrow"){ state.planTomorrow=!state.planTomorrow; render(); }
+    else if(a==="profile-page"){ state.profilePage=t.dataset.page; render(); }
+    else if(a==="profile-back"){ state.profilePage=null; render(); }
     else if(a==="toggle-week"){ var ws=t.dataset.ws; state.openWeeks[ws]=!state.openWeeks[ws]; render(true); }
     else if(a==="toggle-month"){ var mk=t.dataset.mk; state.openMonths[mk]=!state.openMonths[mk]; render(true); }
     else if(a==="sum-period"){ state.summaryPeriod=t.dataset.p; render(true); }
@@ -828,7 +871,7 @@ export function mountApp(root, opts){
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
-    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.view=t.dataset.view; render();
+    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.view=t.dataset.view; render();
   });
 
   /* install-to-home-screen wiring */
