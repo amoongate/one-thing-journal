@@ -157,7 +157,12 @@
   .catname{flex:1;min-width:0;font-family:"Work Sans",sans-serif;font-size:14px;color:var(--ink);border:1px solid var(--rule);border-radius:9px;padding:9px 11px;background:#fff;}
   .catname:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(44,74,135,.1);}
   .catdel{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--rule);border-radius:9px;background:#fff;color:var(--ink-faint);cursor:pointer;}
-  .addcat{margin-top:12px;width:100%;padding:11px;border:1.5px dashed var(--rule-strong);border-radius:11px;background:transparent;color:var(--blue);font-family:"Work Sans",sans-serif;font-weight:600;font-size:14px;cursor:pointer;}
+  .addcat{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:8px 13px;border:1.5px dashed var(--rule-strong);border-radius:10px;background:transparent;color:var(--blue);font-family:"Work Sans",sans-serif;font-weight:600;font-size:13px;cursor:pointer;}
+  .catconfirm{gap:8px;}
+  .catconfirm .cdot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .catconfirm .cclabel{flex:1;min-width:0;font-family:"Work Sans",sans-serif;color:var(--ink-soft);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .catconfirm .cyes{flex:none;border:none;border-radius:8px;padding:7px 12px;font-family:"Work Sans",sans-serif;font-weight:600;font-size:12.5px;background:var(--over);color:#fff;cursor:pointer;}
+  .catconfirm .cno{flex:none;border:1px solid var(--rule-strong);border-radius:8px;padding:7px 12px;font-family:"Work Sans",sans-serif;font-weight:600;font-size:12.5px;background:#fff;color:var(--ink-soft);cursor:pointer;}
   .yeardiv{font-family:"Spectral",serif;font-weight:600;font-size:13px;color:var(--ink-faint);letter-spacing:.5px;margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--rule);}
   .weekdiv{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);padding:10px 14px 3px;}
   .weekdiv .wkacc{color:var(--ink-faint);}
@@ -319,6 +324,15 @@
   .metric .hm{font-family:"Space Mono",monospace;font-size:10px;color:var(--ink-soft);margin-top:1px;}
   .metric.var .v.under{color:var(--good);}
   .metric.var .v.over{color:var(--over);}
+  .catbreak{margin:18px 18px 0;}
+  .catbreak .ctitle{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 13px;}
+  .brow{display:flex;align-items:center;gap:9px;margin-bottom:11px;}
+  .bname{display:flex;align-items:center;gap:7px;width:104px;flex:none;font-size:13px;color:var(--ink);}
+  .bnm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bdot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .btrack{flex:1;height:9px;background:#EEEADD;border-radius:5px;overflow:hidden;}
+  .bfill{height:100%;border-radius:5px;}
+  .btime{width:58px;flex:none;text-align:right;font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);}
 
   /* ---------- Reflection ---------- */
   .reflect{margin:22px 18px 0;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:15px 15px 16px;}

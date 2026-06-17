@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v16-20260616
+// BUILD: app-phase1-v18-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
@@ -71,6 +71,7 @@ export function mountApp(root, opts){
     openWeeks: {},
     openMonths: {},
     move: null,             /* {g,i} of the task being rescheduled */
+    catDel: null,           /* category id pending delete confirmation */
     overrideRest: {},       /* dates where the user chose to plan despite it being a rest day */
     onboard: { done:false, dismissed:false },  /* install-to-home-screen card; gate on a new-user flag in the real build */
     installSheet: false,    /* iOS / fallback instructions modal */
@@ -123,6 +124,20 @@ export function mountApp(root, opts){
   function catTag(p){if(!p.cat)return "";var c=catById(p.cat);if(!c)return "";return '<span class="ctag" style="background:'+tint(c.color)+';color:'+c.color+'"><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</span>';}
   function catChips(it){var cs=state.categories||[],out="";for(var k=0;k<cs.length;k++){var c=cs[k],sel=(it.cat===c.id);out+='<button class="cchip'+(sel?" sel":"")+'" data-action="set-cat" data-cat="'+c.id+'"'+(sel?(' style="background:'+tint(c.color)+';color:'+c.color+'"'):"")+'><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</button>';}return out;}
   function metaInner(p){var ct=catTag(p);var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0,ts="";if(e&&a){var cls=a<=e?"good":"over";ts='<span class="est">'+dur(e)+'</span> \u2192 <span class="'+cls+'">'+dur(a)+'</span>';}else if(e){ts='<span class="est">'+dur(e)+'</span>';}else if(a){ts='<span class="good">'+dur(a)+'</span>';}if(!ct&&!ts)return "";return ct+(ts?'<span class="time">'+ts+'</span>':"");}
+  function catBreakdown(entry){
+    var items=[entry.one].concat(entry.tasks||[]), anyAct=false;
+    items.forEach(function(p){ if((parseInt(p.a,10)||0)>0) anyAct=true; });
+    var fld=anyAct?"a":"e", map={}, total=0;
+    items.forEach(function(p){ var mins=parseInt(p[fld],10)||0; if(mins<=0) return; var c=p.cat?catById(p.cat):null, key=c?c.id:"__none"; if(!(key in map)) map[key]=0; map[key]+=mins; total+=mins; });
+    if(total<=0) return "";
+    var rows=[];
+    for(var key in map){ if(key==="__none") rows.push({name:"Untagged",color:"#B8B3A4",mins:map[key]}); else { var c=catById(key); rows.push({name:c.name,color:c.color,mins:map[key]}); } }
+    rows.sort(function(a,b){return b.mins-a.mins;});
+    var max=rows[0].mins||1;
+    var h='<div class="catbreak"><div class="ctitle">'+(anyAct?"Where the time went":"Planned by category")+'</div>';
+    rows.forEach(function(r){ var pct=Math.max(4,Math.round((r.mins/max)*100)); h+='<div class="brow"><div class="bname"><span class="bdot" style="background:'+r.color+'"></span><span class="bnm">'+esc(r.name)+'</span></div><div class="btrack"><div class="bfill" style="width:'+pct+'%;background:'+r.color+'"></div></div><div class="btime">'+dur(r.mins)+'</div></div>'; });
+    return h+"</div>";
+  }
   function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
 
   /* ---- icons ---- */
@@ -265,6 +280,7 @@ export function mountApp(root, opts){
     h+='<div class="metric"><div class="k">Act. total</div><div class="v" id="tot-act">'+hm(t.act)+'</div><div class="hm">'+Math.round(t.act)+' min</div></div>';
     h+='<div class="metric var"><div class="k">Variance</div><div class="v '+vcls+'" id="tot-var">'+vtxt+'</div><div class="hm">'+(t.act>0?(v>0?'over estimate':v<0?'under estimate':'spot on'):'-')+'</div></div>';
     h+='</div>';
+    h+=catBreakdown(entry);
 
     /* reflection */
     h+='<div class="reflect"><h3>Did I allocate my time well today?</h3><div class="ratings">';
@@ -548,10 +564,14 @@ export function mountApp(root, opts){
     h+='<p class="cintro">Tag tasks by type. Add, rename, recolor, or remove. These are yours.</p>';
     h+='<div class="catlist">';
     state.categories.forEach(function(c){
+      if(state.catDel===c.id){
+        h+='<div class="catedit catconfirm"><span class="cdot" style="background:'+c.color+'"></span><span class="cclabel">Remove \u201c'+esc(c.name)+'\u201d?</span><button class="cyes" data-action="del-cat" data-cat="'+c.id+'">Remove</button><button class="cno" data-action="cancel-del-cat">Keep</button></div>';
+        return;
+      }
       h+='<div class="catedit">'+
         '<input type="color" class="catswatch" data-catf="color" data-cat="'+c.id+'" value="'+esc(c.color)+'" aria-label="Color">'+
         '<input type="text" class="catname" data-catf="name" data-cat="'+c.id+'" value="'+esc(c.name)+'" placeholder="Category name">'+
-        '<button class="catdel" data-action="del-cat" data-cat="'+c.id+'" aria-label="Remove">'+ICON.x+'</button>'+
+        '<button class="catdel" data-action="ask-del-cat" data-cat="'+c.id+'" aria-label="Remove">'+ICON.x+'</button>'+
       '</div>';
     });
     h+='</div>';
@@ -758,7 +778,9 @@ export function mountApp(root, opts){
     else if(a==="mark-rest"){ delete state.overrideRest[t.dataset.date]; render(true); }
     else if(a==="reset-quotes"){ state.quotes=cloneQuotes(DEFAULT_QUOTES); scheduleSave(); render(true); showToast("Quotes reset to defaults"); }
     else if(a==="add-cat"){ var nc={id:"c"+Date.now().toString(36),name:"New category",color:"#5A5750"}; state.categories=(state.categories||[]).concat([nc]); scheduleSave(); render(true); var ci=screen.querySelector('input[data-catf="name"][data-cat="'+nc.id+'"]'); if(ci){ ci.focus(); ci.select(); } }
-    else if(a==="del-cat"){ var cid=t.dataset.cat; state.categories=(state.categories||[]).filter(function(c){return c.id!==cid;}); scheduleSave(); render(true); showToast("Category removed"); }
+    else if(a==="ask-del-cat"){ state.catDel=t.dataset.cat; render(true); }
+    else if(a==="cancel-del-cat"){ state.catDel=null; render(true); }
+    else if(a==="del-cat"){ var cid=t.dataset.cat; state.categories=(state.categories||[]).filter(function(c){return c.id!==cid;}); state.catDel=null; scheduleSave(); render(true); showToast("Category removed"); }
     else if(a==="signout"){ if(opts.onSignOut) opts.onSignOut(); }
   }
   screen.addEventListener("click",onClick);
@@ -773,7 +795,7 @@ export function mountApp(root, opts){
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
-    state.move=null; state.installSheet=false; state.view=t.dataset.view; render();
+    state.move=null; state.installSheet=false; state.catDel=null; state.view=t.dataset.view; render();
   });
 
   /* install-to-home-screen wiring */
