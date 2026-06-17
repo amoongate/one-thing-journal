@@ -20,7 +20,7 @@
     --r-sm:9px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;height:100%;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none;}
   body{
     font-family:"Work Sans",system-ui,sans-serif;color:var(--ink);
     background:var(--desk);
@@ -35,7 +35,7 @@
     display:flex;flex-direction:column;overflow:hidden;position:relative;padding-top:max(env(safe-area-inset-top), 50px);
   }
   @media(min-width:480px){
-    body{padding:24px 0;}
+    body{padding:24px 0;overflow:auto;}
     .app{
       width:412px;height:min(860px,94vh);min-height:0;padding-top:0;
       border-radius:34px;
@@ -44,7 +44,7 @@
     }
   }
 
-  .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;}
   .brandsig{height:27px;width:auto;display:block;opacity:.92;flex:none;}
   .topbar .brandsig{margin-left:auto;}
   .appfoot{text-align:center;padding:24px 18px 30px;border-top:1px solid var(--rule);margin-top:10px;font-size:12px;color:var(--ink-faint);}
