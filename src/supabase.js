@@ -1,7 +1,7 @@
 // Supabase client plus auth and data helpers for One Thing Journal.
 // Env vars are set in Vercel: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
 import { createClient } from "@supabase/supabase-js";
-import { DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
+import { DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS, DEFAULT_GOALS } from "./assets";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -57,6 +57,8 @@ export async function loadData(userId, fallbackEmail) {
       rest_day: null,
       quotes: DEFAULT_QUOTES,
       categories: DEFAULT_CATS,
+      goal_categories: DEFAULT_GOAL_CATS,
+      goals: DEFAULT_GOALS,
     };
     await supabase.from("profiles").upsert(def);
     profile = def;
@@ -86,6 +88,8 @@ export async function loadData(userId, fallbackEmail) {
     },
     quotes: profile.quotes && profile.quotes.length ? profile.quotes : DEFAULT_QUOTES,
     categories: profile.categories && profile.categories.length ? profile.categories : DEFAULT_CATS,
+    goalCategories: profile.goal_categories && profile.goal_categories.length ? profile.goal_categories : DEFAULT_GOAL_CATS,
+    goals: Array.isArray(profile.goals) ? profile.goals : DEFAULT_GOALS,
     entries,
   };
 }
@@ -99,7 +103,7 @@ export function saveEntry(userId, date, data) {
     );
 }
 
-export function saveProfile(userId, user, quotes, categories) {
+export function saveProfile(userId, user, quotes, categories, goalCategories, goals) {
   return supabase
     .from("profiles")
     .update({
@@ -108,6 +112,8 @@ export function saveProfile(userId, user, quotes, categories) {
       rest_day: user.restDay === "" ? null : user.restDay,
       quotes,
       categories,
+      goal_categories: goalCategories,
+      goals,
     })
     .eq("id", userId);
 }

@@ -1,7 +1,7 @@
-// BUILD: app-phase1-v23-20260617
+// BUILD: app-phase1-v24-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
-import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
+import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
 
 export function mountApp(root, opts){
 
@@ -66,7 +66,7 @@ export function mountApp(root, opts){
 
   /* ---- app state ---- */
   var state = {
-    view: "today",          /* today | day | journal | guide | profile */
+    view: "today",          /* today | day | journal | goals | profile */
     activeDate: TODAY,
     openWeeks: {},
     openMonths: {},
@@ -81,7 +81,12 @@ export function mountApp(root, opts){
     showPw: false,
     user: opts.data.user,
     quotes: opts.data.quotes,
-    categories: (opts.data.categories && opts.data.categories.length)? opts.data.categories : cloneCats(DEFAULT_CATS)
+    categories: (opts.data.categories && opts.data.categories.length)? opts.data.categories : cloneCats(DEFAULT_CATS),
+    goalCategories: (opts.data.goalCategories && opts.data.goalCategories.length)? opts.data.goalCategories : cloneCats(DEFAULT_GOAL_CATS),
+    goals: Array.isArray(opts.data.goals)? opts.data.goals : [],
+    goalCatDel: null,        /* goal-category id pending delete confirmation */
+    goalsDoneOpen: {},       /* per-area: is the Done section expanded */
+    goalEdit: null           /* {cat,id,title,note} while adding or editing a goal */
   };
   function restIdx(){ return (state.user.restDay==null||state.user.restDay==="") ? -1 : +state.user.restDay; }
   function isRestDay(date){ var r=restIdx(); return r>=0 && weekdayIdx(date)===r; }
@@ -175,6 +180,7 @@ export function mountApp(root, opts){
     today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M3.5 9h17M8 3v3M16 3v3"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
     journal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4.5h11a2.5 2.5 0 0 1 2.5 2.5v12.5H7.5A2.5 2.5 0 0 1 5 19V4.5z"/><path d="M5 4.5v15M9 8.5h6M9 12h6"/></svg>',
     guide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5" stroke-linecap="round"/><circle cx="12" cy="7.8" r="1.05" fill="currentColor" stroke="none"/></svg>',
+    goals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4v16" stroke-linecap="round"/><path d="M6 5h11l-2.2 3.2L17 11.5H6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     profile:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5a7 7 0 0 1 14 0" stroke-linecap="round"/></svg>',
     back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14.5 5.5 8 12l6.5 6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>',
@@ -544,7 +550,7 @@ export function mountApp(root, opts){
       ["Line up with goals","Make sure your ONE Thing and your tasks ladder up to the bigger goals you've set for yourself."],
       ["Make it yours","Adjust anything here that doesn't fit how you work. The journal serves you, not the other way around."]
     ];
-    var h='<div class="topbar"><h1>How to use it</h1>'+sigMark()+'</div><div class="guide">';
+    var h='<div class="topbar"><button class="iconbtn" data-action="profile-back" aria-label="Back to profile">'+ICON.back+'</button><h1>Guide</h1></div><div class="guide">';
     h+='<p class="intro">A simple loop: plan tonight, estimate, then track what actually happened. Repeat, and your sense of time gets reliable.</p>';
     steps.forEach(function(s,i){
       h+='<div class="step"><div class="n">'+(i+1)+'</div><div class="body"><h4>'+s[0]+'</h4><p>'+s[1]+'</p></div></div>';
@@ -562,6 +568,8 @@ export function mountApp(root, opts){
     if(p==="account") return profileAccount();
     if(p==="motivation") return profileMotivation();
     if(p==="categories") return profileCategories();
+    if(p==="goalcats") return profileGoalCats();
+    if(p==="guide") return renderGuide();
     return profileHub();
   }
 
@@ -578,8 +586,10 @@ export function mountApp(root, opts){
     var initials=u.name.split(/\s+/).map(function(w){return w[0];}).slice(0,2).join("").toUpperCase();
     var qIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 7h4v4c0 2.2-1.3 3.4-3.4 4M14 7h4v4c0 2.2-1.3 3.4-3.4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     var cIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6.5h16M4 12h16M4 17.5h10" stroke-linecap="round"/></svg>';
+    var gcIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7.5 11 4l9 3.5M4 7.5v9L11 20l9-3.5v-9M4 7.5 11 11m9-3.5L11 11m0 0v9" stroke-linejoin="round"/></svg>';
     var chevR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 5.5 15.5 12 9 18.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     var nCat=state.categories.length;
+    var nGCat=(state.goalCategories||[]).length;
     var h='<div class="topbar"><h1>Profile</h1>'+sigMark()+'</div><div class="profile">';
     h+='<div class="avatar">'+esc(initials||"?")+'</div>';
     h+='<div class="pname">'+esc(u.name)+'</div><div class="prole">Realtor & Listing Agent</div>';
@@ -587,6 +597,8 @@ export function mountApp(root, opts){
     h+=hubRow("account","t-acct",ICON.profile,"Account","Name, email, phone, rest day",chevR);
     h+=hubRow("motivation","t-quote",qIco,"Daily motivation","A quote for each weekday",chevR);
     h+=hubRow("categories","t-cat",cIco,"Task categories",nCat+" categor"+(nCat===1?"y":"ies"),chevR);
+    h+=hubRow("goalcats","t-goalcat",gcIco,"Goal Categories",nGCat+" area"+(nGCat===1?"":"s"),chevR);
+    h+=hubRow("guide","t-guide",ICON.guide,"Guide","How the One Thing method works",chevR);
     h+='</div>';
     h+='<button class="signout" data-action="signout">Sign out</button>';
     h+='</div>';
@@ -658,10 +670,92 @@ export function mountApp(root, opts){
       '<input data-uf="'+key+'" type="'+type+'" value="'+esc(val)+'"></div></div>';
   }
 
+  /* ============ render: GOALS ============ */
+  function renderGoals(){
+    var cats=state.goalCategories||[];
+    var h='<div class="topbar"><h1>Goals</h1>'+sigMark()+'</div>';
+    if(!cats.length){
+      h+='<div class="goalsempty"><p>Goals are grouped by your areas. Add an area first, then list your goals under it.</p><button class="gadd" data-action="goto-goalcats">'+ICON.plus+' Set up Goal Categories</button></div>';
+      return h;
+    }
+    h+='<p class="gintro">What you are working toward, grouped by area. Tap the circle to mark a goal done.</p>';
+    cats.forEach(function(c){
+      var all=(state.goals||[]).filter(function(g){return g.cat===c.id;});
+      var active=all.filter(function(g){return !g.done;});
+      var done=all.filter(function(g){return g.done;});
+      var editingHere=state.goalEdit && state.goalEdit.cat===c.id;
+      h+='<div class="gcat">';
+      h+='<div class="gcathead"><span class="gcatdot" style="background:'+c.color+'"></span><span class="gcatname">'+esc(c.name)+'</span></div>';
+      h+='<div class="gcatcount">'+done.length+' / '+all.length+' done</div>';
+      h+='<div class="goals">';
+      active.forEach(function(g){
+        if(editingHere && state.goalEdit.id===g.id){ h+=goalEditor(g.id); return; }
+        h+=goalRow(g,false);
+      });
+      h+='</div>';
+      if(editingHere && state.goalEdit.id===null){ h+=goalEditor(null); }
+      else { h+='<button class="gadd" data-action="goal-add" data-cat="'+c.id+'">'+ICON.plus+' Add a goal</button>'; }
+      if(done.length){
+        var open=!!state.goalsDoneOpen[c.id];
+        h+='<button class="gdone-toggle'+(open?' open':'')+'" data-action="goal-done-toggle" data-cat="'+c.id+'"><span>Done ('+done.length+')</span>'+ICON.chev+'</button>';
+        if(open){
+          h+='<div class="goals done">';
+          done.forEach(function(g){
+            if(editingHere && state.goalEdit.id===g.id){ h+=goalEditor(g.id); return; }
+            h+=goalRow(g,true);
+          });
+          h+='</div>';
+        }
+      }
+      h+='</div>';
+    });
+    return h;
+  }
+
+  function goalRow(g,isDone){
+    var note=g.note? '<div class="gnote">'+esc(g.note)+'</div>':'';
+    return '<div class="goal'+(isDone?' done':'')+'">'+
+      '<button class="gcheck'+(isDone?' on':'')+'" data-action="goal-done" data-id="'+g.id+'" aria-label="Toggle done">'+ICON.check+'</button>'+
+      '<div class="gmain" data-action="goal-edit" data-id="'+g.id+'"><div class="gtitle">'+esc(g.title)+'</div>'+note+'</div>'+
+    '</div>';
+  }
+
+  function goalEditor(id){
+    var ge=state.goalEdit||{title:"",note:""};
+    var delBtn=id? '<button class="gdel" data-action="goal-del" data-id="'+id+'">Delete</button>':'';
+    return '<div class="goaledit">'+
+      '<input class="gtitle-in" data-goalf="title" value="'+esc(ge.title||"")+'" placeholder="Goal title">'+
+      '<textarea class="gnote-in" data-goalf="note" rows="2" placeholder="Notes (optional)">'+esc(ge.note||"")+'</textarea>'+
+      '<div class="goaledit-actions">'+delBtn+'<span class="spacer"></span><button class="gcancel" data-action="goal-cancel">Cancel</button><button class="gsave" data-action="goal-save">Save</button></div>'+
+    '</div>';
+  }
+
+  /* ============ render: GOAL CATEGORIES (profile sub-page) ============ */
+  function profileGoalCats(){
+    var h=profileSubTop("Goal Categories")+'<div class="profile">';
+    h+='<p class="cintro">Your big areas, like companies or life lanes. Goals on the Goals tab get grouped under these. Add, rename, recolor, or remove.</p>';
+    h+='<div class="catlist">';
+    (state.goalCategories||[]).forEach(function(c){
+      if(state.goalCatDel===c.id){
+        h+='<div class="catedit catconfirm"><span class="cdot" style="background:'+c.color+'"></span><span class="cclabel">Remove \u201c'+esc(c.name)+'\u201d?</span><button class="cyes" data-action="del-goalcat" data-gcat="'+c.id+'">Remove</button><button class="cno" data-action="cancel-del-goalcat">Keep</button></div>';
+        return;
+      }
+      h+='<div class="catedit">'+
+        '<input type="color" class="catswatch" data-gcatf="color" data-gcat="'+c.id+'" value="'+esc(c.color)+'" aria-label="Color">'+
+        '<input type="text" class="catname" data-gcatf="name" data-gcat="'+c.id+'" value="'+esc(c.name)+'" placeholder="Area name">'+
+        '<button class="catdel" data-action="ask-del-goalcat" data-gcat="'+c.id+'" aria-label="Remove">'+ICON.x+'</button>'+
+      '</div>';
+    });
+    h+='</div>';
+    h+='<button class="addcat" data-action="add-goalcat">'+ICON.plus+' Add area</button>';
+    h+='</div>';
+    return h;
+  }
+
   /* ============ bottom nav ============ */
   function renderNav(){
     var active = (state.view==="day")?"journal":state.view;
-    var items=[["today","Today"],["journal","Journal"],["guide","Guide"],["profile","Profile"]];
+    var items=[["today","Today"],["journal","Journal"],["goals","Goals"],["profile","Profile"]];
     return items.map(function(it){
       var on=active===it[0];
       return '<button class="navitem" data-action="nav" data-view="'+it[0]+'" aria-current="'+on+'">'+
@@ -677,14 +771,14 @@ export function mountApp(root, opts){
   var _saveT=null, _dirty={};
   function markDirty(d){ if(d) _dirty[d]=true; scheduleSave(); }
   function scheduleSave(){ if(_saveT) clearTimeout(_saveT); _saveT=setTimeout(flushSave,600); }
-  function flushSave(){ _saveT=null; if(!opts.onChange) return; var ents={}; for(var d in _dirty){ ents[d]=entries[d]; } _dirty={}; opts.onChange({entries:ents, user:state.user, quotes:state.quotes, categories:state.categories}); }
+  function flushSave(){ _saveT=null; if(!opts.onChange) return; var ents={}; for(var d in _dirty){ ents[d]=entries[d]; } _dirty={}; opts.onChange({entries:ents, user:state.user, quotes:state.quotes, categories:state.categories, goalCategories:state.goalCategories, goals:state.goals}); }
 
   function render(keepScroll){
     var sc=screen.scrollTop, v=state.view, body="";
     if(v==="today"){ var _td=state.planTomorrow?addDays(TODAY,1):TODAY; state.activeDate=_td; body=renderDay(_td); }
     else if(v==="day"){ body=renderDay(state.activeDate); }
     else if(v==="journal"){ body=renderJournal(); }
-    else if(v==="guide"){ body=renderGuide(); }
+    else if(v==="goals"){ body=renderGoals(); }
     else if(v==="profile"){ body=renderProfile(); }
     screen.innerHTML = body + brandFooter();
     nav.innerHTML=renderNav();
@@ -795,11 +889,17 @@ export function mountApp(root, opts){
     } else if(el.dataset.catf){
       var _cs=state.categories||[];
       for(var _k=0;_k<_cs.length;_k++){ if(_cs[_k].id===el.dataset.cat){ _cs[_k][el.dataset.catf]=el.value; break; } }
+    } else if(el.dataset.gcatf){
+      var _gcs=state.goalCategories||[];
+      for(var _gk=0;_gk<_gcs.length;_gk++){ if(_gcs[_gk].id===el.dataset.gcat){ _gcs[_gk][el.dataset.gcatf]=el.value; break; } }
+    } else if(el.dataset.goalf){
+      if(state.goalEdit) state.goalEdit[el.dataset.goalf]=el.value;
+      if(el.tagName==="TEXTAREA") autosize(el);
     } else if(el.dataset.action==="note"){
       getEntry(state.activeDate).reflection.note=el.value;
     }
     if(el.dataset.g||el.dataset.action==="note") markDirty(state.activeDate);
-    else if(el.dataset.uf||el.dataset.q!==undefined||el.dataset.catf) scheduleSave();
+    else if(el.dataset.uf||el.dataset.q!==undefined||el.dataset.catf||el.dataset.gcatf) scheduleSave();
   }
   screen.addEventListener("input",onInput);
   sheet.addEventListener("input",onInput);
@@ -857,6 +957,18 @@ export function mountApp(root, opts){
     else if(a==="ask-del-cat"){ state.catDel=t.dataset.cat; render(true); }
     else if(a==="cancel-del-cat"){ state.catDel=null; render(true); }
     else if(a==="del-cat"){ var cid=t.dataset.cat; state.categories=(state.categories||[]).filter(function(c){return c.id!==cid;}); state.catDel=null; scheduleSave(); render(true); showToast("Category removed"); }
+    else if(a==="add-goalcat"){ var ng={id:"gc"+Date.now().toString(36),name:"New area",color:"#2C4A87"}; state.goalCategories=(state.goalCategories||[]).concat([ng]); scheduleSave(); render(true); var gci=screen.querySelector('input[data-gcatf="name"][data-gcat="'+ng.id+'"]'); if(gci){ gci.focus(); gci.select(); } }
+    else if(a==="ask-del-goalcat"){ state.goalCatDel=t.dataset.gcat; render(true); }
+    else if(a==="cancel-del-goalcat"){ state.goalCatDel=null; render(true); }
+    else if(a==="del-goalcat"){ var gcid=t.dataset.gcat; state.goalCategories=(state.goalCategories||[]).filter(function(c){return c.id!==gcid;}); state.goals=(state.goals||[]).filter(function(g){return g.cat!==gcid;}); state.goalCatDel=null; scheduleSave(); render(true); showToast("Area removed"); }
+    else if(a==="goto-goalcats"){ state.view="profile"; state.profilePage="goalcats"; render(); }
+    else if(a==="goal-add"){ state.goalEdit={cat:t.dataset.cat,id:null,title:"",note:""}; render(true); var gin=screen.querySelector('.goaledit [data-goalf="title"]'); if(gin) gin.focus(); }
+    else if(a==="goal-edit"){ var geid=t.dataset.id; var gg=(state.goals||[]).filter(function(x){return x.id===geid;})[0]; if(gg){ state.goalEdit={cat:gg.cat,id:gg.id,title:gg.title,note:gg.note||""}; render(true); var gin2=screen.querySelector('.goaledit [data-goalf="title"]'); if(gin2) gin2.focus(); } }
+    else if(a==="goal-cancel"){ state.goalEdit=null; render(true); }
+    else if(a==="goal-save"){ var ge=state.goalEdit; if(ge){ var ttl=(ge.title||"").trim(); if(!ttl){ state.goalEdit=null; render(true); } else { if(ge.id){ var ag=(state.goals||[]).filter(function(x){return x.id===ge.id;})[0]; if(ag){ ag.title=ttl; ag.note=ge.note||""; } } else { state.goals=(state.goals||[]).concat([{id:"g"+Date.now().toString(36),cat:ge.cat,title:ttl,note:ge.note||"",done:false}]); } state.goalEdit=null; scheduleSave(); render(true); } } }
+    else if(a==="goal-del"){ var gdid=t.dataset.id; state.goals=(state.goals||[]).filter(function(x){return x.id!==gdid;}); state.goalEdit=null; scheduleSave(); render(true); showToast("Goal deleted"); }
+    else if(a==="goal-done"){ var gtid=t.dataset.id; var tg=(state.goals||[]).filter(function(x){return x.id===gtid;})[0]; if(tg){ tg.done=!tg.done; if(tg.done) state.goalsDoneOpen[tg.cat]=true; scheduleSave(); render(true); } }
+    else if(a==="goal-done-toggle"){ var gdc=t.dataset.cat; state.goalsDoneOpen[gdc]=!state.goalsDoneOpen[gdc]; render(true); }
     else if(a==="signout"){ if(opts.onSignOut) opts.onSignOut(); }
   }
   screen.addEventListener("click",onClick);
@@ -871,7 +983,7 @@ export function mountApp(root, opts){
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
-    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.view=t.dataset.view; render();
+    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.goalEdit=null; state.goalCatDel=null; state.view=t.dataset.view; render();
   });
 
   /* install-to-home-screen wiring */

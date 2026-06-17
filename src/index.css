@@ -436,6 +436,44 @@
   .pchev{color:var(--ink-faint);flex:0 0 auto;display:flex;}
   .pchev svg{width:17px;height:17px;}
   .qhead.page{justify-content:flex-end;margin-bottom:10px;}
+  .ptile.t-goalcat{background:rgba(91,75,138,.14);color:#5B4B8A;}
+  .ptile.t-guide{background:rgba(86,83,74,.12);color:var(--ink-soft);}
+  /* ---- goals page ---- */
+  .gintro{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;line-height:1.5;padding:0 2px;}
+  .goalsempty{padding:26px 8px;text-align:center;}
+  .goalsempty p{font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 14px;}
+  .gcat{margin-bottom:22px;padding:0 2px;}
+  .gcathead{display:flex;align-items:center;gap:9px;}
+  .gcatdot{width:12px;height:12px;border-radius:4px;flex:0 0 auto;}
+  .gcatname{font-family:"Spectral",serif;font-weight:600;font-size:16px;color:var(--ink);}
+  .gcatcount{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.3px;margin:3px 0 10px 21px;}
+  .goals{display:flex;flex-direction:column;gap:7px;}
+  .goal{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;background:#fff;border:1px solid var(--rule);border-radius:11px;}
+  .gcheck{width:21px;height:21px;border-radius:50%;border:2px solid var(--rule-strong);background:transparent;flex:0 0 auto;margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+  .gcheck svg{width:12px;height:12px;color:#fff;opacity:0;}
+  .gcheck.on{background:var(--good);border-color:var(--good);}
+  .gcheck.on svg{opacity:1;}
+  .gmain{flex:1 1 auto;min-width:0;cursor:pointer;}
+  .gtitle{font-size:14px;line-height:1.4;color:var(--ink);}
+  .gnote{font-size:12px;color:var(--ink-faint);line-height:1.45;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .goal.done .gtitle{color:var(--ink-faint);text-decoration:line-through;}
+  .goal.done .gnote{text-decoration:line-through;}
+  .gadd{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;color:var(--blue);font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;border:1.5px dashed var(--rule-strong);border-radius:11px;margin-top:8px;background:transparent;cursor:pointer;}
+  .gadd svg{width:14px;height:14px;}
+  .gdone-toggle{display:flex;align-items:center;gap:6px;width:100%;justify-content:flex-start;margin-top:12px;padding:6px 2px;background:transparent;border:none;color:var(--ink-faint);font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;}
+  .gdone-toggle svg{width:15px;height:15px;transition:transform .2s;}
+  .gdone-toggle.open svg{transform:rotate(180deg);}
+  .goals.done{margin-top:6px;}
+  .goaledit{background:var(--paper-2);border:1px solid var(--rule-strong);border-radius:12px;padding:11px;margin-top:8px;}
+  .goaledit .gtitle-in{width:100%;font-family:"Work Sans",sans-serif;font-size:14.5px;color:var(--ink);border:1px solid var(--rule-strong);border-radius:9px;background:#fff;padding:10px 11px;}
+  .goaledit .gnote-in{width:100%;font-family:"Work Sans",sans-serif;font-size:13px;color:var(--ink);border:1px solid var(--rule-strong);border-radius:9px;background:#fff;padding:9px 11px;margin-top:8px;resize:none;line-height:1.45;}
+  .goaledit .gtitle-in:focus,.goaledit .gnote-in:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(44,74,135,.1);}
+  .goaledit-actions{display:flex;align-items:center;gap:8px;margin-top:10px;}
+  .goaledit-actions .spacer{flex:1 1 auto;}
+  .goaledit-actions button{font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;border-radius:9px;padding:8px 14px;cursor:pointer;}
+  .gcancel{background:transparent;border:1px solid var(--rule-strong);color:var(--ink-soft);}
+  .gsave{background:var(--ink);border:none;color:var(--paper);}
+  .gdel{background:transparent;border:none;color:var(--over);padding:8px 6px;font-weight:600;font-family:"Work Sans",sans-serif;font-size:13px;cursor:pointer;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;}
   .field .inwrap{position:relative;}

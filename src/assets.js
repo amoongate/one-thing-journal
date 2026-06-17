@@ -24,3 +24,10 @@ export const DEFAULT_CATS = [
   { id: "transaction", name: "Transaction", color: "#834A74" },
   { id: "networking",  name: "Networking",  color: "#5F6A2E" }
 ];
+
+export const DEFAULT_GOAL_CATS = [
+  { id: "gc_work",     name: "Work",     color: "#2C4A87" },
+  { id: "gc_personal", name: "Personal", color: "#834A74" }
+];
+
+export const DEFAULT_GOALS = [];
