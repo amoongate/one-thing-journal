@@ -448,7 +448,7 @@
   .gcatname{font-family:"Spectral",serif;font-weight:600;font-size:16px;color:var(--ink);}
   .gcatcount{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.3px;margin:3px 0 10px 21px;}
   .goals{display:flex;flex-direction:column;gap:7px;}
-  .goal{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;background:#fff;border:1px solid var(--rule);border-radius:11px;}
+  .goalrow{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;background:#fff;border:1px solid var(--rule);border-radius:11px;text-align:left;}
   .gcheck{width:21px;height:21px;border-radius:50%;border:2px solid var(--rule-strong);background:transparent;flex:0 0 auto;margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
   .gcheck svg{width:12px;height:12px;color:#fff;opacity:0;}
   .gcheck.on{background:var(--good);border-color:var(--good);}
@@ -456,8 +456,8 @@
   .gmain{flex:1 1 auto;min-width:0;cursor:pointer;}
   .gtitle{font-size:14px;line-height:1.4;color:var(--ink);}
   .gnote{font-size:12px;color:var(--ink-faint);line-height:1.45;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere;}
-  .goal.done .gtitle{color:var(--ink-faint);text-decoration:line-through;}
-  .goal.done .gnote{text-decoration:line-through;}
+  .goalrow.done .gtitle{color:var(--ink-faint);text-decoration:line-through;}
+  .goalrow.done .gnote{text-decoration:line-through;}
   .gadd{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;color:var(--blue);font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;border:1.5px dashed var(--rule-strong);border-radius:11px;margin-top:8px;background:transparent;cursor:pointer;}
   .gadd svg{width:14px;height:14px;}
   .gdone-toggle{display:flex;align-items:center;gap:6px;width:100%;justify-content:flex-start;margin-top:12px;padding:6px 2px;background:transparent;border:none;color:var(--ink-faint);font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;}

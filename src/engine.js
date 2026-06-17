@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v24-20260617
+// BUILD: app-phase1-v25-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -714,7 +714,7 @@ export function mountApp(root, opts){
 
   function goalRow(g,isDone){
     var note=g.note? '<div class="gnote">'+esc(g.note)+'</div>':'';
-    return '<div class="goal'+(isDone?' done':'')+'">'+
+    return '<div class="goalrow'+(isDone?' done':'')+'">'+
       '<button class="gcheck'+(isDone?' on':'')+'" data-action="goal-done" data-id="'+g.id+'" aria-label="Toggle done">'+ICON.check+'</button>'+
       '<div class="gmain" data-action="goal-edit" data-id="'+g.id+'"><div class="gtitle">'+esc(g.title)+'</div>'+note+'</div>'+
     '</div>';
