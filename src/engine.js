@@ -1,7 +1,7 @@
-// BUILD: app-phase1-v15-20260616
+// BUILD: app-phase1-v16-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
-import { SIG, DEFAULT_QUOTES } from "./assets";
+import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
 
 export function mountApp(root, opts){
 
@@ -24,6 +24,7 @@ export function mountApp(root, opts){
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   
   function cloneQuotes(src){return src.map(function(x){return {q:x.q,a:x.a};});}
+  function cloneCats(src){return src.map(function(c){return {id:c.id,name:c.name,color:c.color};});}
 
   /* ---- date helpers (local, TZ-safe) ---- */
   function parseISO(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
@@ -75,7 +76,8 @@ export function mountApp(root, opts){
     installSheet: false,    /* iOS / fallback instructions modal */
     showPw: false,
     user: opts.data.user,
-    quotes: opts.data.quotes
+    quotes: opts.data.quotes,
+    categories: (opts.data.categories && opts.data.categories.length)? opts.data.categories : cloneCats(DEFAULT_CATS)
   };
   function restIdx(){ return (state.user.restDay==null||state.user.restDay==="") ? -1 : +state.user.restDay; }
   function isRestDay(date){ var r=restIdx(); return r>=0 && weekdayIdx(date)===r; }
@@ -105,7 +107,7 @@ export function mountApp(root, opts){
     }
     return entries[date];
   }
-  function blank(){return {t:"",e:"",a:"",done:false};}
+  function blank(){return {t:"",e:"",a:"",done:false,cat:""};}
   function num(v){var n=parseFloat(v);return isNaN(n)?0:n;}
   function allItems(en){ return (en&&en.tasks) ? [en.one].concat(en.tasks) : []; }
   function totals(entry){
@@ -116,7 +118,11 @@ export function mountApp(root, opts){
   function hm(min){return Math.floor(min/60)+"h "+String(Math.round(min%60)).padStart(2,"0")+"m";}
   function hmVar(min){var r=Math.round(min),s=r>0?"+":(r<0?"-":""),a=Math.abs(r);return s+Math.floor(a/60)+"h "+String(a%60).padStart(2,"0")+"m";}
   function dur(min){min=Math.round(min);var h=Math.floor(min/60),m=min%60;return h?(m?h+"h "+m+"m":h+"h"):m+"m";}
-  function metaInner(p){var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0;if(!e&&!a)return "";if(e&&a){var cls=a<=e?"good":"over";return '<span class="est">'+dur(e)+'</span> \u2192 <span class="'+cls+'">'+dur(a)+'</span>';}if(e)return '<span class="est">'+dur(e)+'</span>';return '<span class="good">'+dur(a)+'</span>';}
+  function tint(hex){var x=String(hex).replace("#","");if(x.length===3){x=x[0]+x[0]+x[1]+x[1]+x[2]+x[2];}var r=parseInt(x.substr(0,2),16)||0,g=parseInt(x.substr(2,2),16)||0,b=parseInt(x.substr(4,2),16)||0;return "rgba("+r+","+g+","+b+",0.13)";}
+  function catById(id){var cs=state.categories||[];for(var k=0;k<cs.length;k++){if(cs[k].id===id)return cs[k];}return null;}
+  function catTag(p){if(!p.cat)return "";var c=catById(p.cat);if(!c)return "";return '<span class="ctag" style="background:'+tint(c.color)+';color:'+c.color+'"><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</span>';}
+  function catChips(it){var cs=state.categories||[],out="";for(var k=0;k<cs.length;k++){var c=cs[k],sel=(it.cat===c.id);out+='<button class="cchip'+(sel?" sel":"")+'" data-action="set-cat" data-cat="'+c.id+'"'+(sel?(' style="background:'+tint(c.color)+';color:'+c.color+'"'):"")+'><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</button>';}return out;}
+  function metaInner(p){var ct=catTag(p);var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0,ts="";if(e&&a){var cls=a<=e?"good":"over";ts='<span class="est">'+dur(e)+'</span> \u2192 <span class="'+cls+'">'+dur(a)+'</span>';}else if(e){ts='<span class="est">'+dur(e)+'</span>';}else if(a){ts='<span class="good">'+dur(a)+'</span>';}if(!ct&&!ts)return "";return ct+(ts?'<span class="time">'+ts+'</span>':"");}
   function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
 
   /* ---- icons ---- */
@@ -538,6 +544,19 @@ export function mountApp(root, opts){
     });
     h+='</div>';
 
+    h+='<div class="csection"><div class="chead"><h3>Task categories</h3></div>';
+    h+='<p class="cintro">Tag tasks by type. Add, rename, recolor, or remove. These are yours.</p>';
+    h+='<div class="catlist">';
+    state.categories.forEach(function(c){
+      h+='<div class="catedit">'+
+        '<input type="color" class="catswatch" data-catf="color" data-cat="'+c.id+'" value="'+esc(c.color)+'" aria-label="Color">'+
+        '<input type="text" class="catname" data-catf="name" data-cat="'+c.id+'" value="'+esc(c.name)+'" placeholder="Category name">'+
+        '<button class="catdel" data-action="del-cat" data-cat="'+c.id+'" aria-label="Remove">'+ICON.x+'</button>'+
+      '</div>';
+    });
+    h+='</div>';
+    h+='<button class="addcat" data-action="add-cat">'+ICON.plus+' Add category</button>';
+    h+='</div>';
     h+='<button class="signout" data-action="signout">Sign out</button>';
     h+='</div>';
     return h;
@@ -566,7 +585,7 @@ export function mountApp(root, opts){
   var _saveT=null, _dirty={};
   function markDirty(d){ if(d) _dirty[d]=true; scheduleSave(); }
   function scheduleSave(){ if(_saveT) clearTimeout(_saveT); _saveT=setTimeout(flushSave,600); }
-  function flushSave(){ _saveT=null; if(!opts.onChange) return; var ents={}; for(var d in _dirty){ ents[d]=entries[d]; } _dirty={}; opts.onChange({entries:ents, user:state.user, quotes:state.quotes}); }
+  function flushSave(){ _saveT=null; if(!opts.onChange) return; var ents={}; for(var d in _dirty){ ents[d]=entries[d]; } _dirty={}; opts.onChange({entries:ents, user:state.user, quotes:state.quotes, categories:state.categories}); }
 
   function render(keepScroll){
     var sc=screen.scrollTop, v=state.view, body="";
@@ -639,6 +658,7 @@ export function mountApp(root, opts){
         '<h3>'+(isOne?'The ONE Thing':'Task')+'</h3>'+
         '<div class="tasklbl">“'+esc(item.t||"Untitled task")+'”</div>'+
         '<div class="ptimes">'+timeIn("e","Estimated","")+timeIn("a","Actual"," act")+'</div>'+
+        '<div class="pcatlabel">Category</div><div class="cchips">'+catChips(item)+'</div>'+
         '<div class="psec">Move to another day</div>'+
         '<div class="qrow">'+q("Tomorrow",addDays(state.activeDate,1))+q("In 2 days",addDays(state.activeDate,2))+q("Next week",addDays(state.activeDate,7))+'</div>'+
         '<div class="datepick"><label>Pick a date</label><input type="date" value="'+addDays(state.activeDate,1)+'" data-action="move-date"></div>'+
@@ -680,11 +700,14 @@ export function mountApp(root, opts){
     } else if(el.dataset.q!==undefined){
       state.quotes[+el.dataset.q][el.dataset.qf]=el.value;
       if(el.tagName==="TEXTAREA") autosize(el);
+    } else if(el.dataset.catf){
+      var _cs=state.categories||[];
+      for(var _k=0;_k<_cs.length;_k++){ if(_cs[_k].id===el.dataset.cat){ _cs[_k][el.dataset.catf]=el.value; break; } }
     } else if(el.dataset.action==="note"){
       getEntry(state.activeDate).reflection.note=el.value;
     }
     if(el.dataset.g||el.dataset.action==="note") markDirty(state.activeDate);
-    else if(el.dataset.uf||el.dataset.q!==undefined) scheduleSave();
+    else if(el.dataset.uf||el.dataset.q!==undefined||el.dataset.catf) scheduleSave();
   }
   screen.addEventListener("input",onInput);
   sheet.addEventListener("input",onInput);
@@ -705,6 +728,7 @@ export function mountApp(root, opts){
       t.classList.toggle("on",item.done); t.setAttribute("aria-pressed",item.done); markDirty(state.activeDate);
     }
     else if(a==="open-task"){ state.move={g:t.dataset.g,i:+t.dataset.i,confirmDelete:false}; render(true); }
+    else if(a==="set-cat"){ var dm=state.move; if(dm){ var en=getEntry(state.activeDate); var it=(dm.g==="one"?en.one:en.tasks[dm.i]); if(it){ it.cat=(it.cat===t.dataset.cat?"":t.dataset.cat); markDirty(state.activeDate); } } render(true); }
     else if(a==="move-to"){ doMove(t.dataset.date); }
     else if(a==="panel-close"){ state.move=null; render(true); }
     else if(a==="ask-delete"){ if(state.move) state.move.confirmDelete=true; render(true); }
@@ -733,6 +757,8 @@ export function mountApp(root, opts){
     else if(a==="plan-rest"){ state.overrideRest[t.dataset.date]=true; render(true); }
     else if(a==="mark-rest"){ delete state.overrideRest[t.dataset.date]; render(true); }
     else if(a==="reset-quotes"){ state.quotes=cloneQuotes(DEFAULT_QUOTES); scheduleSave(); render(true); showToast("Quotes reset to defaults"); }
+    else if(a==="add-cat"){ var nc={id:"c"+Date.now().toString(36),name:"New category",color:"#5A5750"}; state.categories=(state.categories||[]).concat([nc]); scheduleSave(); render(true); var ci=screen.querySelector('input[data-catf="name"][data-cat="'+nc.id+'"]'); if(ci){ ci.focus(); ci.select(); } }
+    else if(a==="del-cat"){ var cid=t.dataset.cat; state.categories=(state.categories||[]).filter(function(c){return c.id!==cid;}); scheduleSave(); render(true); showToast("Category removed"); }
     else if(a==="signout"){ if(opts.onSignOut) opts.onSignOut(); }
   }
   screen.addEventListener("click",onClick);

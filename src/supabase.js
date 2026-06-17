@@ -1,7 +1,7 @@
 // Supabase client plus auth and data helpers for One Thing Journal.
 // Env vars are set in Vercel: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
 import { createClient } from "@supabase/supabase-js";
-import { DEFAULT_QUOTES } from "./assets";
+import { DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -56,6 +56,7 @@ export async function loadData(userId, fallbackEmail) {
       phone: "",
       rest_day: null,
       quotes: DEFAULT_QUOTES,
+      categories: DEFAULT_CATS,
     };
     await supabase.from("profiles").upsert(def);
     profile = def;
@@ -84,6 +85,7 @@ export async function loadData(userId, fallbackEmail) {
       restDay,
     },
     quotes: profile.quotes && profile.quotes.length ? profile.quotes : DEFAULT_QUOTES,
+    categories: profile.categories && profile.categories.length ? profile.categories : DEFAULT_CATS,
     entries,
   };
 }
@@ -97,7 +99,7 @@ export function saveEntry(userId, date, data) {
     );
 }
 
-export function saveProfile(userId, user, quotes) {
+export function saveProfile(userId, user, quotes, categories) {
   return supabase
     .from("profiles")
     .update({
@@ -105,6 +107,7 @@ export function saveProfile(userId, user, quotes) {
       phone: user.phone,
       rest_day: user.restDay === "" ? null : user.restDay,
       quotes,
+      categories,
     })
     .eq("id", userId);
 }

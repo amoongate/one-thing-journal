@@ -1,11 +1,11 @@
-// BUILD: app-phase1-v15-20260616
+// BUILD: app-phase1-v16-20260616
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
-import { DEFAULT_QUOTES } from "./assets";
+import { DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
 import { mountApp } from "./engine";
 import * as db from "./supabase";
 
-const BUILD = "app-phase1-v15-20260616";
+const BUILD = "app-phase1-v16-20260616";
 if (typeof window !== "undefined") window.__OTJ_BUILD = BUILD;
 
 function toISO(d) {
@@ -239,7 +239,7 @@ function AppHost({ session }) {
       .then((d) => { if (on) setData(d); })
       .catch((e) => {
         console.error("load failed", e);
-        if (on) setData({ user: { name: "", email: session.user.email, phone: "", restDay: "" }, quotes: DEFAULT_QUOTES, entries: {} });
+        if (on) setData({ user: { name: "", email: session.user.email, phone: "", restDay: "" }, quotes: DEFAULT_QUOTES, categories: DEFAULT_CATS, entries: {} });
       });
     return () => { on = false; };
   }, [session.user.id]);
@@ -256,7 +256,7 @@ function AppHost({ session }) {
           for (const date in snap.entries) {
             await db.saveEntry(uid, date, snap.entries[date]);
           }
-          await db.saveProfile(uid, snap.user, snap.quotes);
+          await db.saveProfile(uid, snap.user, snap.quotes, snap.categories);
         } catch (e) {
           console.error("save failed", e);
         }

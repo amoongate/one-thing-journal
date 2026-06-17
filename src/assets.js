@@ -10,3 +10,17 @@ export const DEFAULT_QUOTES = [
     {q:"Don't be the hero, be the guide. Invite customers into a story.", a:"Donald Miller"},
     {q:"Things which matter most must never be at the mercy of things which matter least.", a:"Goethe"}
   ];
+
+export const DEFAULT_CATS = [
+  { id: "prospecting", name: "Prospecting", color: "#2C4A87" },
+  { id: "marketing",   name: "Marketing",   color: "#5B4B8A" },
+  { id: "admin",       name: "Admin",       color: "#5A5750" },
+  { id: "strategy",    name: "Strategy",    color: "#3E4A78" },
+  { id: "development", name: "Development",  color: "#3B6D3B" },
+  { id: "buyer",       name: "Buyer",       color: "#9A6324" },
+  { id: "listing",     name: "Listing",     color: "#B0492B" },
+  { id: "followup",    name: "Follow-up",   color: "#2F6E63" },
+  { id: "showings",    name: "Showings",    color: "#8A6D1F" },
+  { id: "transaction", name: "Transaction", color: "#834A74" },
+  { id: "networking",  name: "Networking",  color: "#5F6A2E" }
+];
