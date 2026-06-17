@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v19-20260616
+// BUILD: app-phase1-v20-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
@@ -72,6 +72,7 @@ export function mountApp(root, opts){
     openMonths: {},
     move: null,             /* {g,i} of the task being rescheduled */
     catDel: null,           /* category id pending delete confirmation */
+    summaryPeriod: "week",  /* journal summary scope: week | month | ytd */
     overrideRest: {},       /* dates where the user chose to plan despite it being a rest day */
     onboard: { done:false, dismissed:false },  /* install-to-home-screen card; gate on a new-user flag in the real build */
     installSheet: false,    /* iOS / fallback instructions modal */
@@ -143,14 +144,27 @@ export function mountApp(root, opts){
     var ag=catRows(allItems(entry)); if(ag.total<=0) return "";
     return '<div class="catbreak"><div class="ctitle">'+(ag.anyAct?"Where the time went":"Planned by category")+'</div>'+catBars(ag.rows)+'</div>';
   }
-  function weekSummary(ws){
-    var dates=[]; for(var i=0;i<7;i++){ var d=addDays(ws,i); if(!isRestDay(d)) dates.push(d); }
-    var items=[], est=0, act=0;
+  function periodSummary(){
+    var p=state.summaryPeriod||"week", dates=[], label="";
+    if(p==="month"){ var mk=TODAY.slice(0,7); Object.keys(entries).forEach(function(d){ if(d.slice(0,7)===mk && !isRestDay(d)) dates.push(d); }); label="This month"; }
+    else if(p==="ytd"){ var yr=TODAY.slice(0,4); Object.keys(entries).forEach(function(d){ if(d.slice(0,4)===yr && d<=TODAY && !isRestDay(d)) dates.push(d); }); label="Year to date"; }
+    else { var ws=weekStart(TODAY); for(var i=0;i<7;i++){ var d=addDays(ws,i); if(!isRestDay(d)) dates.push(d); } label="This week"; }
+    var est=0, act=0, items=[];
     dates.forEach(function(d){ var en=entries[d]; if(!en) return; var tt=totals(en); est+=tt.est; act+=tt.act; items=items.concat(allItems(en)); });
-    var ag=catRows(items); if(ag.total<=0) return "";
-    var st=periodStats(dates), trk=(act>0?act:est);
-    var head='<div class="wsumtop"><div class="wsi"><div class="wsk">Tracked</div><div class="wsv">'+hm(trk)+'</div></div>'+(st?'<div class="wsi"><div class="wsk">Accuracy</div><div class="wsv">'+pct(st.acc)+'%</div></div>':"")+'</div>';
-    return '<div class="weeksum">'+head+'<div class="ctitle">'+(ag.anyAct?"Where the time went":"Planned by category")+'</div>'+catBars(ag.rows)+'</div>';
+    var ag=catRows(items);
+    function seg(val,txt){ return '<button class="seg'+(p===val?" sel":"")+'" data-action="sum-period" data-p="'+val+'">'+txt+'</button>'; }
+    var toggle='<div class="segctl">'+seg("week","Week")+seg("month","Month")+seg("ytd","YTD")+'</div>';
+    var v=act-est, vcls="", vtxt="-", vsub="-";
+    if(act>0){ vcls=(v>0?"over":"under"); vtxt=hmVar(v); vsub=(v>0?"over estimate":v<0?"under estimate":"spot on"); }
+    var metrics='<div class="summary">'+
+      '<div class="metric"><div class="k">Est. total</div><div class="v">'+hm(est)+'</div><div class="hm">'+Math.round(est)+' min</div></div>'+
+      '<div class="metric"><div class="k">Act. total</div><div class="v">'+hm(act)+'</div><div class="hm">'+Math.round(act)+' min</div></div>'+
+      '<div class="metric var"><div class="k">Variance</div><div class="v '+vcls+'">'+vtxt+'</div><div class="hm">'+vsub+'</div></div>'+
+    '</div>';
+    var body = ag.total>0
+      ? '<div class="ctitle">'+(ag.anyAct?"Where the time went":"Planned by category")+'</div>'+catBars(ag.rows)
+      : '<div class="psempty">Nothing logged for this period yet.</div>';
+    return '<div class="psummary"><div class="pshead"><h2>Summary</h2><span class="cap">'+label+'</span></div>'+toggle+metrics+body+'</div>';
   }
   function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
 
@@ -422,7 +436,6 @@ export function mountApp(root, opts){
 
     /* current week: always shown, expanded */
     h+='<div class="sec-head" style="padding-left:0"><h2>This week</h2><span class="cap">'+fmtRange(curWS)+'</span></div>';
-    h+=weekSummary(curWS);
     h+=weekCard(curWS,true,true);
 
     /* archive: past days grouped Year > Month, with week dividers inside */
@@ -450,6 +463,7 @@ export function mountApp(root, opts){
         h+=monthCard(mk,months[mk],state.openMonths[mk],statByMonth[mk],prevAccByMonth[mk]);
       });
     }
+    h+=periodSummary();
     h+='</div>';
     return h;
   }
@@ -787,6 +801,7 @@ export function mountApp(root, opts){
     else if(a==="open-day"){ state.activeDate=t.dataset.date; state.view="day"; render(); }
     else if(a==="toggle-week"){ var ws=t.dataset.ws; state.openWeeks[ws]=!state.openWeeks[ws]; render(true); }
     else if(a==="toggle-month"){ var mk=t.dataset.mk; state.openMonths[mk]=!state.openMonths[mk]; render(true); }
+    else if(a==="sum-period"){ state.summaryPeriod=t.dataset.p; render(true); }
     else if(a==="toggle-pw"){ state.showPw=!state.showPw; render(true); }
     else if(a==="save-profile"){ scheduleSave(); t.classList.add("done"); t.textContent="Saved ✓"; setTimeout(function(){t.classList.remove("done");t.textContent="Save changes";},1400); }
     else if(a==="plan-rest"){ state.overrideRest[t.dataset.date]=true; render(true); }
