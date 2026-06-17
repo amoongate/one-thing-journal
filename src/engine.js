@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v30-20260617
+// BUILD: app-phase1-v31-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -715,7 +715,7 @@ export function mountApp(root, opts){
 
   function goalRow(g,isDone){
     var note=g.note? '<div class="gnote">'+esc(g.note)+'</div>':'';
-    return '<div class="goalrow'+(isDone?' done':'')+'">'+
+    return '<div class="goalrow'+(isDone?' done':'')+'" data-id="'+g.id+'">'+
       '<button class="gcheck'+(isDone?' on':'')+'" data-action="goal-done" data-id="'+g.id+'" aria-label="Toggle done">'+ICON.check+'</button>'+
       '<div class="gmain" data-action="goal-edit" data-id="'+g.id+'"><div class="gtitle">'+esc(g.title)+'</div>'+note+'</div>'+
     '</div>';
@@ -999,12 +999,21 @@ export function mountApp(root, opts){
   var _press=null, _drag=null, _dragEndAt=0;
   function _rowDown(e){
     if(_drag) return;
-    if(state.view!=="today" && state.view!=="day") return;
-    if(e.target.closest(".icoact") || e.target.closest(".check")) return;
-    var row=e.target.closest(".trow"); if(!row) return;
-    var list=row.parentNode; if(!list || !list.classList.contains("tasklist")) return;
-    _press={row:row, list:list, x:e.clientX, y:e.clientY};
-    _press.timer=setTimeout(function(){ _beginDrag(_press); _press=null; }, 480);
+    var row=null, list=null, rowSel=null, mode=null, hold=480;
+    if(state.view==="today" || state.view==="day"){
+      if(e.target.closest(".icoact") || e.target.closest(".check")) return;
+      row=e.target.closest(".trow"); if(!row) return;
+      list=row.parentNode; if(!list || !list.classList.contains("tasklist")) return;
+      rowSel=".trow"; mode="task";
+    } else if(state.view==="goals"){
+      if(state.goalEdit) return;
+      if(e.target.closest(".gcheck") || e.target.closest(".goaledit")) return;
+      row=e.target.closest(".goalrow"); if(!row) return;
+      list=row.parentNode; if(!list || !list.classList.contains("goals")) return;
+      rowSel=".goalrow"; mode="goal"; hold=500;
+    } else { return; }
+    _press={row:row, list:list, rowSel:rowSel, mode:mode, x:e.clientX, y:e.clientY};
+    _press.timer=setTimeout(function(){ _beginDrag(_press); _press=null; }, hold);
   }
   function _rowMove(e){
     if(_press && !_drag){
@@ -1028,13 +1037,13 @@ export function mountApp(root, opts){
     ghost.style.width=rect.width+"px"; ghost.style.left=rect.left+"px"; ghost.style.top=rect.top+"px";
     document.body.appendChild(ghost);
     row.classList.add("rowsrc");
-    _drag={orig:row, ghost:ghost, list:ps.list, offY:ps.y-rect.top};
+    _drag={orig:row, ghost:ghost, list:ps.list, offY:ps.y-rect.top, rowSel:ps.rowSel, mode:ps.mode};
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     if(navigator.vibrate){ try{navigator.vibrate(12);}catch(err){} }
     document.body.classList.add("rowreorder");
   }
   function _rowBefore(y){
-    var rows=_drag.list.querySelectorAll(".trow:not(.rowsrc)");
+    var rows=_drag.list.querySelectorAll(_drag.rowSel+":not(.rowsrc)");
     for(var k=0;k<rows.length;k++){ var r=rows[k].getBoundingClientRect(); if(y<r.top+r.height/2) return rows[k]; }
     return null;
   }
@@ -1055,10 +1064,18 @@ export function mountApp(root, opts){
     _drag.ghost.remove();
     _drag.orig.classList.remove("rowsrc");
     document.body.classList.remove("rowreorder");
-    var order=[]; _drag.list.querySelectorAll(".trow").forEach(function(r){ order.push(parseInt(r.getAttribute("data-i"),10)); });
-    var entry=getEntry(state.activeDate), nt=[];
-    for(var k=0;k<order.length;k++){ var it=entry.tasks[order[k]]; if(it) nt.push(it); }
-    if(nt.length===entry.tasks.length){ entry.tasks=nt; markDirty(state.activeDate); }
+    if(_drag.mode==="goal"){
+      var ids=[]; _drag.list.querySelectorAll(".goalrow").forEach(function(r){ ids.push(r.getAttribute("data-id")); });
+      var idset={}; ids.forEach(function(id){ idset[id]=true; });
+      var byId={}; (state.goals||[]).forEach(function(g){ byId[g.id]=g; });
+      var queue=ids.map(function(id){ return byId[id]; }).filter(Boolean);
+      if(queue.length===ids.length){ var qi=0; state.goals=(state.goals||[]).map(function(g){ return idset[g.id]?queue[qi++]:g; }); scheduleSave(); }
+    } else {
+      var order=[]; _drag.list.querySelectorAll(".trow").forEach(function(r){ order.push(parseInt(r.getAttribute("data-i"),10)); });
+      var entry=getEntry(state.activeDate), nt=[];
+      for(var k=0;k<order.length;k++){ var it=entry.tasks[order[k]]; if(it) nt.push(it); }
+      if(nt.length===entry.tasks.length){ entry.tasks=nt; markDirty(state.activeDate); }
+    }
     _drag=null; _dragEndAt=Date.now();
     render(true);
   }
