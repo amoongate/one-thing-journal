@@ -325,7 +325,7 @@
   .metric.var .v.under{color:var(--good);}
   .metric.var .v.over{color:var(--over);}
   .catbreak{margin:18px 18px 0;}
-  .catbreak .ctitle{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 13px;}
+  .catbreak .ctitle,.weeksum .ctitle{font-family:"Space Mono",monospace;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 13px;}
   .brow{display:flex;align-items:center;gap:9px;margin-bottom:11px;}
   .bname{display:flex;align-items:center;gap:7px;width:104px;flex:none;font-size:13px;color:var(--ink);}
   .bnm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -333,6 +333,10 @@
   .btrack{flex:1;height:9px;background:#EEEADD;border-radius:5px;overflow:hidden;}
   .bfill{height:100%;border-radius:5px;}
   .btime{width:58px;flex:none;text-align:right;font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-soft);}
+  .weeksum{background:var(--paper-2);border-radius:14px;padding:15px 15px 7px;margin:6px 0 20px;}
+  .wsumtop{display:flex;gap:26px;margin-bottom:15px;}
+  .wsi .wsk{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);}
+  .wsi .wsv{font-family:"Space Mono",monospace;font-weight:700;font-size:18px;color:var(--ink);margin-top:3px;}
 
   /* ---------- Reflection ---------- */
   .reflect{margin:22px 18px 0;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:15px 15px 16px;}

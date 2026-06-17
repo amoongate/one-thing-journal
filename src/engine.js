@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v18-20260616
+// BUILD: app-phase1-v19-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
@@ -124,19 +124,33 @@ export function mountApp(root, opts){
   function catTag(p){if(!p.cat)return "";var c=catById(p.cat);if(!c)return "";return '<span class="ctag" style="background:'+tint(c.color)+';color:'+c.color+'"><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</span>';}
   function catChips(it){var cs=state.categories||[],out="";for(var k=0;k<cs.length;k++){var c=cs[k],sel=(it.cat===c.id);out+='<button class="cchip'+(sel?" sel":"")+'" data-action="set-cat" data-cat="'+c.id+'"'+(sel?(' style="background:'+tint(c.color)+';color:'+c.color+'"'):"")+'><span class="cdot" style="background:'+c.color+'"></span>'+esc(c.name)+'</button>';}return out;}
   function metaInner(p){var ct=catTag(p);var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0,ts="";if(e&&a){var cls=a<=e?"good":"over";ts='<span class="est">'+dur(e)+'</span> \u2192 <span class="'+cls+'">'+dur(a)+'</span>';}else if(e){ts='<span class="est">'+dur(e)+'</span>';}else if(a){ts='<span class="good">'+dur(a)+'</span>';}if(!ct&&!ts)return "";return ct+(ts?'<span class="time">'+ts+'</span>':"");}
-  function catBreakdown(entry){
-    var items=[entry.one].concat(entry.tasks||[]), anyAct=false;
+  function catRows(items){
+    var anyAct=false;
     items.forEach(function(p){ if((parseInt(p.a,10)||0)>0) anyAct=true; });
     var fld=anyAct?"a":"e", map={}, total=0;
     items.forEach(function(p){ var mins=parseInt(p[fld],10)||0; if(mins<=0) return; var c=p.cat?catById(p.cat):null, key=c?c.id:"__none"; if(!(key in map)) map[key]=0; map[key]+=mins; total+=mins; });
-    if(total<=0) return "";
     var rows=[];
     for(var key in map){ if(key==="__none") rows.push({name:"Untagged",color:"#B8B3A4",mins:map[key]}); else { var c=catById(key); rows.push({name:c.name,color:c.color,mins:map[key]}); } }
     rows.sort(function(a,b){return b.mins-a.mins;});
-    var max=rows[0].mins||1;
-    var h='<div class="catbreak"><div class="ctitle">'+(anyAct?"Where the time went":"Planned by category")+'</div>';
+    return {rows:rows, total:total, anyAct:anyAct};
+  }
+  function catBars(rows){
+    var max=(rows[0]&&rows[0].mins)||1, h="";
     rows.forEach(function(r){ var pct=Math.max(4,Math.round((r.mins/max)*100)); h+='<div class="brow"><div class="bname"><span class="bdot" style="background:'+r.color+'"></span><span class="bnm">'+esc(r.name)+'</span></div><div class="btrack"><div class="bfill" style="width:'+pct+'%;background:'+r.color+'"></div></div><div class="btime">'+dur(r.mins)+'</div></div>'; });
-    return h+"</div>";
+    return h;
+  }
+  function catBreakdown(entry){
+    var ag=catRows(allItems(entry)); if(ag.total<=0) return "";
+    return '<div class="catbreak"><div class="ctitle">'+(ag.anyAct?"Where the time went":"Planned by category")+'</div>'+catBars(ag.rows)+'</div>';
+  }
+  function weekSummary(ws){
+    var dates=[]; for(var i=0;i<7;i++){ var d=addDays(ws,i); if(!isRestDay(d)) dates.push(d); }
+    var items=[], est=0, act=0;
+    dates.forEach(function(d){ var en=entries[d]; if(!en) return; var tt=totals(en); est+=tt.est; act+=tt.act; items=items.concat(allItems(en)); });
+    var ag=catRows(items); if(ag.total<=0) return "";
+    var st=periodStats(dates), trk=(act>0?act:est);
+    var head='<div class="wsumtop"><div class="wsi"><div class="wsk">Tracked</div><div class="wsv">'+hm(trk)+'</div></div>'+(st?'<div class="wsi"><div class="wsk">Accuracy</div><div class="wsv">'+pct(st.acc)+'%</div></div>':"")+'</div>';
+    return '<div class="weeksum">'+head+'<div class="ctitle">'+(ag.anyAct?"Where the time went":"Planned by category")+'</div>'+catBars(ag.rows)+'</div>';
   }
   function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
 
@@ -408,6 +422,7 @@ export function mountApp(root, opts){
 
     /* current week: always shown, expanded */
     h+='<div class="sec-head" style="padding-left:0"><h2>This week</h2><span class="cap">'+fmtRange(curWS)+'</span></div>';
+    h+=weekSummary(curWS);
     h+=weekCard(curWS,true,true);
 
     /* archive: past days grouped Year > Month, with week dividers inside */
