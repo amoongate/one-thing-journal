@@ -198,6 +198,17 @@
   .rowactions{display:flex;gap:4px;flex:none;margin-top:1px;}
   .hero .t-input,.trow .t-input{border-bottom:none;padding:1px 0 3px;}
   .hero.done .t-input,.trow.done .t-input{text-decoration:line-through;color:var(--ink-faint);}
+  .tmeta{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-faint);margin-top:4px;letter-spacing:.3px;}
+  .tmeta:empty{display:none;}
+  .tmeta .est{color:var(--ink-soft);}
+  .tmeta .good{color:var(--good);}
+  .tmeta .over{color:var(--over);}
+  .tasklist .trow{transition:transform .18s ease;}
+  .tasklist .t-input:not(:focus){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+  .trow.rowsrc{background:transparent!important;border:1px dashed var(--rule-strong);}
+  .trow.rowsrc > *{visibility:hidden;}
+  .trow.rowghost{position:fixed;z-index:62;margin:0!important;pointer-events:none;transform:scale(1.03);box-shadow:0 16px 32px -10px rgba(0,0,0,.34);background:#fff;border-color:#cfc9b6;}
+  body.rowreorder .screen{touch-action:none;}
   .emptyrow{font-size:13px;color:var(--ink-faint);font-style:italic;padding:11px 2px;}
 
   /* install-to-home-screen onboarding card */

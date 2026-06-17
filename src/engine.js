@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v14-20260616
+// BUILD: app-phase1-v15-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES } from "./assets";
@@ -115,6 +115,8 @@ export function mountApp(root, opts){
   }
   function hm(min){return Math.floor(min/60)+"h "+String(Math.round(min%60)).padStart(2,"0")+"m";}
   function hmVar(min){var r=Math.round(min),s=r>0?"+":(r<0?"-":""),a=Math.abs(r);return s+Math.floor(a/60)+"h "+String(a%60).padStart(2,"0")+"m";}
+  function dur(min){min=Math.round(min);var h=Math.floor(min/60),m=min%60;return h?(m?h+"h "+m+"m":h+"h"):m+"m";}
+  function metaInner(p){var e=parseInt(p.e,10)||0,a=parseInt(p.a,10)||0;if(!e&&!a)return "";if(e&&a){var cls=a<=e?"good":"over";return '<span class="est">'+dur(e)+'</span> \u2192 <span class="'+cls+'">'+dur(a)+'</span>';}if(e)return '<span class="est">'+dur(e)+'</span>';return '<span class="good">'+dur(a)+'</span>';}
   function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");}
 
   /* ---- icons ---- */
@@ -284,7 +286,7 @@ export function mountApp(root, opts){
       '<span class="onelabel">The ONE Thing</span>'+
       '<div class="hero-main">'+
         '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="one" data-i="0" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
-        '<div class="hero-body"><textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea></div>'+
+        '<div class="hero-body"><textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea><div class="tmeta" data-meta="one:0">'+metaInner(p)+'</div></div>'+
       '</div>'+
     '</div>';
   }
@@ -294,13 +296,14 @@ export function mountApp(root, opts){
     var actions='<div class="rowactions">'+
       '<button class="icoact" data-action="open-task" data-g="'+g+'" data-i="'+i+'" aria-label="Task options">'+ICON.dots+'</button>'+
     '</div>';
-    return '<div class="trow'+(p.done?" done":"")+(rowIdx%2?" alt":"")+'">'+
+    return '<div class="trow'+(p.done?" done":"")+(rowIdx%2?" alt":"")+'" data-i="'+i+'">'+
       '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="'+g+'" data-i="'+i+'" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
       '<div class="trow-body">'+
         '<div class="trow-line">'+
           '<textarea class="t-input" rows="1" data-g="'+g+'" data-i="'+i+'" data-f="t" placeholder="'+ph+'">'+esc(p.t)+'</textarea>'+
           actions+
         '</div>'+
+        '<div class="tmeta" data-meta="'+g+':'+i+'">'+metaInner(p)+'</div>'+
       '</div>'+
     '</div>';
   }
@@ -590,6 +593,13 @@ export function mountApp(root, opts){
   function autosize(el){ if(el.clientWidth<80) return; el.style.height="auto"; el.style.height=el.scrollHeight+"px"; }
   function sizeTaskFields(){ screen.querySelectorAll("textarea.t-input, textarea.q-input").forEach(autosize); }
 
+  function updateMeta(g,i){
+    var entry=getEntry(state.activeDate);
+    var p = g==="one" ? entry.one : (entry.tasks[i]||null);
+    if(!p) return;
+    var el=screen.querySelector('.tmeta[data-meta="'+g+':'+i+'"]');
+    if(el) el.innerHTML=metaInner(p);
+  }
   function updateTotals(){
     var entry=getEntry(state.activeDate), t=totals(entry);
     var el;
@@ -681,6 +691,7 @@ export function mountApp(root, opts){
 
   /* ---- clicks: shared across screen + sheet ---- */
   function onClick(e){
+    if(Date.now()-_dragEndAt<350) return;
     var t=e.target.closest("[data-action]"); if(!t) return;
     var a=t.dataset.action;
     if(a==="add-task"){ getEntry(state.activeDate).tasks.push(blank()); markDirty(state.activeDate); render(true);
@@ -731,7 +742,7 @@ export function mountApp(root, opts){
   sheet.addEventListener("click",onClick);
   sheet.addEventListener("change",function(e){
     if(e.target.dataset.action==="move-date"){ doMove(e.target.value); }
-    else if(e.target.dataset.f==="e"||e.target.dataset.f==="a"){ onInput(e); }
+    else if(e.target.dataset.f==="e"||e.target.dataset.f==="a"){ onInput(e); updateMeta(e.target.dataset.g, e.target.dataset.i); }
   });
 
   nav.addEventListener("click",function(e){
@@ -747,6 +758,78 @@ export function mountApp(root, opts){
   window.addEventListener("beforeinstallprompt", _bip);
   window.addEventListener("appinstalled", _ai);
 
+  /* ---- long-press drag to reorder tasks ---- */
+  var _press=null, _drag=null, _dragEndAt=0;
+  function _rowDown(e){
+    if(_drag) return;
+    if(state.view!=="today" && state.view!=="day") return;
+    if(e.target.closest(".icoact") || e.target.closest(".check")) return;
+    var row=e.target.closest(".trow"); if(!row) return;
+    var list=row.parentNode; if(!list || !list.classList.contains("tasklist")) return;
+    _press={row:row, list:list, x:e.clientX, y:e.clientY};
+    _press.timer=setTimeout(function(){ _beginDrag(_press); _press=null; }, 480);
+  }
+  function _rowMove(e){
+    if(_press && !_drag){
+      if(Math.abs(e.clientY-_press.y)>10 || Math.abs(e.clientX-_press.x)>10){ clearTimeout(_press.timer); _press=null; }
+      return;
+    }
+    if(_drag){
+      e.preventDefault();
+      _drag.ghost.style.top=(e.clientY-_drag.offY)+"px";
+      var before=_rowBefore(e.clientY);
+      if(before!==_drag.orig && before!==_drag.orig.nextSibling){ _rowFlip(before); }
+    }
+  }
+  function _rowUp(){
+    if(_press){ clearTimeout(_press.timer); _press=null; }
+    if(_drag){ _endDrag(); }
+  }
+  function _beginDrag(ps){
+    var row=ps.row, rect=row.getBoundingClientRect();
+    var ghost=row.cloneNode(true); ghost.classList.add("rowghost");
+    ghost.style.width=rect.width+"px"; ghost.style.left=rect.left+"px"; ghost.style.top=rect.top+"px";
+    document.body.appendChild(ghost);
+    row.classList.add("rowsrc");
+    _drag={orig:row, ghost:ghost, list:ps.list, offY:ps.y-rect.top};
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    if(navigator.vibrate){ try{navigator.vibrate(12);}catch(err){} }
+    document.body.classList.add("rowreorder");
+  }
+  function _rowBefore(y){
+    var rows=_drag.list.querySelectorAll(".trow:not(.rowsrc)");
+    for(var k=0;k<rows.length;k++){ var r=rows[k].getBoundingClientRect(); if(y<r.top+r.height/2) return rows[k]; }
+    return null;
+  }
+  function _rowFlip(before){
+    var kids=Array.prototype.slice.call(_drag.list.children);
+    var tops=kids.map(function(r){ return [r, r.getBoundingClientRect().top]; });
+    _drag.list.insertBefore(_drag.orig, before);
+    Array.prototype.forEach.call(_drag.list.children,function(r){
+      if(r===_drag.orig) return;
+      var prev=null; for(var k=0;k<tops.length;k++){ if(tops[k][0]===r){ prev=tops[k][1]; break; } }
+      if(prev==null) return;
+      var dy=prev-r.getBoundingClientRect().top;
+      if(dy){ r.style.transition="none"; r.style.transform="translateY("+dy+"px)";
+        requestAnimationFrame(function(){ r.style.transition="transform .18s ease"; r.style.transform=""; }); }
+    });
+  }
+  function _endDrag(){
+    _drag.ghost.remove();
+    _drag.orig.classList.remove("rowsrc");
+    document.body.classList.remove("rowreorder");
+    var order=[]; _drag.list.querySelectorAll(".trow").forEach(function(r){ order.push(parseInt(r.getAttribute("data-i"),10)); });
+    var entry=getEntry(state.activeDate), nt=[];
+    for(var k=0;k<order.length;k++){ var it=entry.tasks[order[k]]; if(it) nt.push(it); }
+    if(nt.length===entry.tasks.length){ entry.tasks=nt; markDirty(state.activeDate); }
+    _drag=null; _dragEndAt=Date.now();
+    render(true);
+  }
+  screen.addEventListener("pointerdown",_rowDown);
+  document.addEventListener("pointermove",_rowMove,{passive:false});
+  document.addEventListener("pointerup",_rowUp);
+  document.addEventListener("pointercancel",_rowUp);
+
   function resizeFields(){ try{ sizeTaskFields(); }catch(e){} }
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(resizeFields); }
   var _rsz=null;
@@ -760,6 +843,11 @@ export function mountApp(root, opts){
     window.removeEventListener("beforeinstallprompt", _bip);
     window.removeEventListener("appinstalled", _ai);
     window.removeEventListener("resize", _onResize);
+    document.removeEventListener("pointermove", _rowMove);
+    document.removeEventListener("pointerup", _rowUp);
+    document.removeEventListener("pointercancel", _rowUp);
+    if(_press){ clearTimeout(_press.timer); }
+    if(_drag && _drag.ghost){ _drag.ghost.remove(); document.body.classList.remove("rowreorder"); }
     if(_rsz) clearTimeout(_rsz);
   };
 
