@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v21-20260616
+// BUILD: app-phase1-v22-20260616
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS } from "./assets";
@@ -73,6 +73,7 @@ export function mountApp(root, opts){
     move: null,             /* {g,i} of the task being rescheduled */
     catDel: null,           /* category id pending delete confirmation */
     summaryPeriod: "week",  /* journal summary scope: week | month | ytd */
+    planTomorrow: false,    /* Today tab: plan tomorrow instead of today */
     overrideRest: {},       /* dates where the user chose to plan despite it being a rest day */
     onboard: { done:false, dismissed:false },  /* install-to-home-screen card; gate on a new-user flag in the real build */
     installSheet: false,    /* iOS / fallback instructions modal */
@@ -272,7 +273,8 @@ export function mountApp(root, opts){
     }
 
     h+='<div class="dayhead">';
-    h+='<div class="dayrow1"><div class="dayname">'+WEEKDAYS[d.getDay()]+(isToday?'<span class="todaychip">Today</span>':'')+'</div>'+sigMark()+'</div>';
+    var _chip=(state.view==="today")?'<button class="todaychip'+(date!==TODAY?" ahead":"")+'" data-action="toggle-tomorrow">'+(date===TODAY?"Today":"Tomorrow")+'</button>':(isToday?'<span class="todaychip">Today</span>':"");
+    h+='<div class="dayrow1"><div class="dayname">'+WEEKDAYS[d.getDay()]+_chip+'</div>'+sigMark()+'</div>';
     h+='<div class="daydate">'+MONTHS[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()+'</div>';
     h+='</div>';
     if(isRestDay(date)){
@@ -638,7 +640,7 @@ export function mountApp(root, opts){
 
   function render(keepScroll){
     var sc=screen.scrollTop, v=state.view, body="";
-    if(v==="today"){ state.activeDate=TODAY; body=renderDay(TODAY); }
+    if(v==="today"){ var _td=state.planTomorrow?addDays(TODAY,1):TODAY; state.activeDate=_td; body=renderDay(_td); }
     else if(v==="day"){ body=renderDay(state.activeDate); }
     else if(v==="journal"){ body=renderJournal(); }
     else if(v==="guide"){ body=renderGuide(); }
@@ -799,6 +801,7 @@ export function mountApp(root, opts){
     }
     else if(a==="back"){ state.view="journal"; render(); }
     else if(a==="open-day"){ state.activeDate=t.dataset.date; state.view="day"; render(); }
+    else if(a==="toggle-tomorrow"){ state.planTomorrow=!state.planTomorrow; render(); }
     else if(a==="toggle-week"){ var ws=t.dataset.ws; state.openWeeks[ws]=!state.openWeeks[ws]; render(true); }
     else if(a==="toggle-month"){ var mk=t.dataset.mk; state.openMonths[mk]=!state.openMonths[mk]; render(true); }
     else if(a==="sum-period"){ state.summaryPeriod=t.dataset.p; render(true); }
@@ -825,7 +828,7 @@ export function mountApp(root, opts){
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
-    state.move=null; state.installSheet=false; state.catDel=null; state.view=t.dataset.view; render();
+    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.view=t.dataset.view; render();
   });
 
   /* install-to-home-screen wiring */

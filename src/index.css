@@ -75,10 +75,11 @@
   .dayname{font-family:"Spectral",serif;font-weight:600;font-size:34px;line-height:1;letter-spacing:-.5px;}
   .daydate{font-family:"Space Mono",monospace;font-size:13px;color:var(--ink-soft);margin-top:6px;}
   .todaychip{
-    display:inline-block;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:1px;
+    display:inline-block;border:none;cursor:pointer;-webkit-appearance:none;appearance:none;line-height:1;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:1px;
     text-transform:uppercase;background:var(--marker);color:var(--ink);padding:3px 8px;border-radius:6px;
     vertical-align:middle;margin-left:8px;
   }
+  .todaychip.ahead{background:#E4ECF7;color:#2C4A87;}
   .quote{
     font-family:"Spectral",serif;font-style:italic;font-size:15px;color:#3d3a30;line-height:1.5;
     padding:12px 18px 4px;
