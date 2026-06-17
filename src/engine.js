@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v25-20260617
+// BUILD: app-phase1-v26-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
