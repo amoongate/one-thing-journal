@@ -445,7 +445,7 @@
   .gcat{margin-bottom:22px;padding:0 18px;}
   .gcathead{display:flex;align-items:center;gap:9px;}
   .gcatdot{width:12px;height:12px;border-radius:4px;flex:0 0 auto;}
-  .gcatname{font-family:"Spectral",serif;font-weight:600;font-size:16px;color:var(--ink);}
+  .gcatname{font-family:"Spectral",serif;font-weight:600;font-size:16px;color:var(--ink);flex:1 1 auto;min-width:0;}
   .gcatcount{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-faint);letter-spacing:.3px;margin:3px 0 10px 21px;}
   .goals{display:flex;flex-direction:column;gap:7px;}
   .goalrow{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;background:#fff;border:1px solid var(--rule);border-radius:11px;text-align:left;}
@@ -474,6 +474,72 @@
   .gcancel{background:transparent;border:1px solid var(--rule-strong);color:var(--ink-soft);}
   .gsave{background:var(--ink);border:none;color:var(--paper);}
   .gdel{background:transparent;border:none;color:var(--over);padding:8px 6px;font-weight:600;font-family:"Work Sans",sans-serif;font-size:13px;cursor:pointer;}
+  /* goal list: task chip + open chevron */
+  .gtaskchip{display:inline-flex;align-items:center;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.3px;color:var(--ink-faint);background:var(--paper-2);border:1px solid var(--rule);border-radius:6px;padding:2px 7px;margin-top:8px;}
+  .goalrow .gopen{flex:0 0 auto;align-self:center;color:var(--ink-faint);display:flex;align-items:center;}
+  .goalrow .gopen svg{width:17px;height:17px;}
+  /* goal detail page */
+  .gdetail{padding:0 18px 8px;}
+  .gdarea{display:flex;align-items:center;gap:8px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;}
+  .gdarea .gcatdot{width:11px;height:11px;border-radius:4px;}
+  .gdhead{display:flex;align-items:center;gap:11px;margin-bottom:6px;}
+  .gcheck.big{width:24px;height:24px;}
+  .gdtitle{flex:1 1 auto;min-width:0;font-family:"Spectral",serif;font-weight:600;font-size:19px;color:var(--ink);border:none;background:transparent;padding:4px 0;}
+  .gdtitle:focus{outline:none;border-bottom:2px solid var(--marker);}
+  .gdnote{width:100%;font-family:"Work Sans",sans-serif;font-size:13.5px;color:var(--ink-soft);line-height:1.5;border:none;background:transparent;resize:none;padding:0 0 0 35px;margin-bottom:16px;}
+  .gdnote:focus{outline:none;}
+  .gdtaskhead{font-family:"Space Mono",monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);border-top:1px solid var(--rule);padding-top:16px;margin-bottom:12px;}
+  .gdtasks{display:flex;flex-direction:column;gap:8px;}
+  .gdtaskempty{font-size:13px;color:var(--ink-faint);line-height:1.5;margin:0;}
+  .gdtask{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--rule);border-radius:10px;padding:7px 8px 7px 11px;}
+  .scheck{width:19px;height:19px;border-radius:50%;border:2px solid var(--rule-strong);background:transparent;flex:0 0 auto;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+  .scheck svg{width:11px;height:11px;color:#fff;opacity:0;}
+  .scheck.on{background:var(--good);border-color:var(--good);}
+  .scheck.on svg{opacity:1;}
+  .gdtaskin{flex:1 1 auto;min-width:0;font-family:"Work Sans",sans-serif;font-size:14px;color:var(--ink);border:none;background:transparent;padding:3px 0;}
+  .gdtaskin:focus{outline:none;}
+  .gdtask.done .gdtaskin{color:var(--ink-faint);text-decoration:line-through;}
+  .gmovebtn{flex:0 0 auto;width:30px;height:30px;border-radius:8px;border:1px solid rgba(44,74,135,.25);background:rgba(44,74,135,.07);color:var(--blue);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .gmovebtn svg{width:17px;height:17px;}
+  .gtdel{flex:0 0 auto;width:26px;height:30px;border:none;background:transparent;color:var(--ink-faint);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .gtdel svg{width:15px;height:15px;}
+  .movepop{background:var(--paper-2);border:1px solid var(--rule-strong);border-radius:11px;padding:11px;margin:1px 0;}
+  .movepop .mq{font-size:12.5px;color:var(--ink-soft);margin-bottom:9px;}
+  .movepop .mrow{display:flex;gap:7px;flex-wrap:wrap;}
+  .movepop .mbtn{flex:1;min-width:74px;text-align:center;border:1px solid var(--rule-strong);background:#fff;border-radius:9px;padding:9px 6px;font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;}
+  .movepop .mbtn.cal{position:relative;color:var(--blue);overflow:hidden;display:flex;align-items:center;justify-content:center;}
+  .movepop .mbtn.cal input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .movepop .mcancel{margin-top:9px;background:transparent;border:none;color:var(--ink-faint);font-size:12.5px;font-family:"Work Sans",sans-serif;cursor:pointer;padding:4px 2px;}
+  .gdaddtask{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;color:var(--blue);font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;border:1.5px dashed var(--rule-strong);border-radius:11px;margin-top:10px;background:transparent;cursor:pointer;}
+  .gdaddtask svg{width:14px;height:14px;}
+  .gddelbtn{display:block;margin:26px auto 4px;background:transparent;border:none;color:var(--over);font-family:"Work Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;padding:8px;}
+  .gddelrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:24px;padding:11px;border:1px solid var(--rule-strong);border-radius:11px;background:var(--paper-2);}
+  .gddelq{flex:1 1 100%;font-size:13px;color:var(--ink);margin-bottom:2px;}
+  .gddelyes{background:var(--over);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;font-family:"Work Sans",sans-serif;cursor:pointer;}
+  .gddelno{background:transparent;border:1px solid var(--rule-strong);color:var(--ink-soft);border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;font-family:"Work Sans",sans-serif;cursor:pointer;}
+  /* category plan chip */
+  .plan{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;font-family:"Work Sans",sans-serif;font-size:11px;font-weight:600;border-radius:7px;padding:4px 9px;cursor:pointer;}
+  .plan svg{width:13px;height:13px;}
+  .plan.has{color:var(--blue);background:rgba(44,74,135,.1);border:1px solid rgba(44,74,135,.28);}
+  .plan.none{color:var(--ink-faint);background:transparent;border:1px dashed var(--rule-strong);}
+  /* inline PDF viewer overlay */
+  .planviewer{position:absolute;inset:0;z-index:80;background:var(--paper-2);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);}
+  .planviewer .vbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--paper);border-bottom:1px solid var(--rule);}
+  .planviewer .x{width:32px;height:32px;border:1px solid var(--rule-strong);border-radius:8px;background:var(--paper);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex:0 0 auto;cursor:pointer;}
+  .planviewer .x svg{width:16px;height:16px;}
+  .planviewer .vmeta{flex:1 1 auto;min-width:0;}
+  .planviewer .vt{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--blue);}
+  .planviewer .vf{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .planviewer .more{width:32px;height:32px;border:none;background:transparent;color:var(--ink-faint);display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;}
+  .planviewer .more svg{width:18px;height:18px;}
+  .planmenu{position:absolute;top:calc(env(safe-area-inset-top) + 54px);right:12px;z-index:3;background:#fff;border:1px solid var(--rule-strong);border-radius:10px;box-shadow:0 10px 24px rgba(40,36,24,.18);overflow:hidden;display:flex;flex-direction:column;}
+  .planmenu[hidden]{display:none;}
+  .planmenu button{background:transparent;border:none;text-align:left;padding:11px 16px;font-family:"Work Sans",sans-serif;font-size:13.5px;color:var(--ink);cursor:pointer;white-space:nowrap;}
+  .planmenu button.rm{color:var(--over);border-top:1px solid var(--rule);}
+  .planviewer .vscroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px;}
+  #planpages{display:flex;flex-direction:column;gap:12px;align-items:center;}
+  .planpage{border:1px solid var(--rule-strong);border-radius:3px;box-shadow:0 4px 14px rgba(40,36,24,.12);background:#fff;display:block;max-width:100%;}
+  .planloading{text-align:center;color:var(--ink-faint);font-size:13px;padding:44px 10px;font-family:"Space Mono",monospace;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;}
   .field .inwrap{position:relative;}

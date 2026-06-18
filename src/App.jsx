@@ -1,11 +1,11 @@
-// BUILD: app-phase1-v31-20260617
+// BUILD: app-phase1-v33-20260617
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
 import { DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS, DEFAULT_GOALS } from "./assets";
 import { mountApp } from "./engine";
 import * as db from "./supabase";
 
-const BUILD = "app-phase1-v31-20260617";
+const BUILD = "app-phase1-v33-20260617";
 if (typeof window !== "undefined") window.__OTJ_BUILD = BUILD;
 
 function toISO(d) {
@@ -262,6 +262,11 @@ function AppHost({ session }) {
         }
       },
       onSignOut: async () => { await db.signOut(); },
+      planApi: {
+        upload: (catId, file) => db.uploadPlan(session.user.id, catId, file),
+        load: (catId) => db.loadPlan(session.user.id, catId),
+        remove: (catId) => db.removePlan(session.user.id, catId),
+      },
     });
     destroyRef.current = destroy;
     return () => { if (destroyRef.current) destroyRef.current(); };

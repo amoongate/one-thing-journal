@@ -120,3 +120,25 @@ export function saveProfile(userId, user, quotes, categories, goalCategories, go
     })
     .eq("id", userId);
 }
+
+// ---- Goal-category plan PDFs (Supabase Storage: bucket "plans") ----
+export async function uploadPlan(userId, catId, file) {
+  const path = `${userId}/${catId}.pdf`;
+  const { error } = await supabase.storage
+    .from("plans")
+    .upload(path, file, { upsert: true, contentType: "application/pdf" });
+  if (error) throw error;
+  return path;
+}
+
+export async function loadPlan(userId, catId) {
+  const path = `${userId}/${catId}.pdf`;
+  const { data, error } = await supabase.storage.from("plans").download(path);
+  if (error) throw error;
+  return data; // Blob
+}
+
+export async function removePlan(userId, catId) {
+  const path = `${userId}/${catId}.pdf`;
+  await supabase.storage.from("plans").remove([path]);
+}

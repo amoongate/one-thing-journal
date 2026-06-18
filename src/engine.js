@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v31-20260617
+// BUILD: app-phase1-v33-20260617
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -86,7 +86,10 @@ export function mountApp(root, opts){
     goals: Array.isArray(opts.data.goals)? opts.data.goals : [],
     goalCatDel: null,        /* goal-category id pending delete confirmation */
     goalsDoneOpen: {},       /* per-area: is the Done section expanded */
-    goalEdit: null           /* {cat,id,title,note} while adding or editing a goal */
+    goalEdit: null,          /* {cat,id,title,note} while adding a goal */
+    goalOpen: null,          /* goal id whose detail page is open */
+    goalMove: null,          /* task id showing the move-to-day options */
+    goalDelConfirm: false    /* detail page: confirming goal deletion */
   };
   function restIdx(){ return (state.user.restDay==null||state.user.restDay==="") ? -1 : +state.user.restDay; }
   function isRestDay(date){ var r=restIdx(); return r>=0 && weekdayIdx(date)===r; }
@@ -686,13 +689,12 @@ export function mountApp(root, opts){
       var done=all.filter(function(g){return g.done;});
       var editingHere=state.goalEdit && state.goalEdit.cat===c.id;
       h+='<div class="gcat">';
-      h+='<div class="gcathead"><span class="gcatdot" style="background:'+c.color+'"></span><span class="gcatname">'+esc(c.name)+'</span></div>';
+      var _docIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg>';
+      var _planBtn=c.plan? '<button class="plan has" data-action="plan-open" data-cat="'+c.id+'">'+_docIco+'Plan</button>' : '<button class="plan none" data-action="plan-add" data-cat="'+c.id+'">'+ICON.plus+'Plan</button>';
+      h+='<div class="gcathead"><span class="gcatdot" style="background:'+c.color+'"></span><span class="gcatname">'+esc(c.name)+'</span>'+_planBtn+'</div>';
       h+='<div class="gcatcount">'+done.length+' / '+all.length+' done</div>';
       h+='<div class="goals">';
-      active.forEach(function(g){
-        if(editingHere && state.goalEdit.id===g.id){ h+=goalEditor(g.id); return; }
-        h+=goalRow(g,false);
-      });
+      active.forEach(function(g){ h+=goalRow(g,false); });
       h+='</div>';
       if(editingHere && state.goalEdit.id===null){ h+=goalEditor(null); }
       else { h+='<button class="gadd" data-action="goal-add" data-cat="'+c.id+'">'+ICON.plus+' Add a goal</button>'; }
@@ -701,10 +703,7 @@ export function mountApp(root, opts){
         h+='<button class="gdone-toggle'+(open?' open':'')+'" data-action="goal-done-toggle" data-cat="'+c.id+'"><span>Done ('+done.length+')</span>'+ICON.chev+'</button>';
         if(open){
           h+='<div class="goals done">';
-          done.forEach(function(g){
-            if(editingHere && state.goalEdit.id===g.id){ h+=goalEditor(g.id); return; }
-            h+=goalRow(g,true);
-          });
+          done.forEach(function(g){ h+=goalRow(g,true); });
           h+='</div>';
         }
       }
@@ -715,9 +714,12 @@ export function mountApp(root, opts){
 
   function goalRow(g,isDone){
     var note=g.note? '<div class="gnote">'+esc(g.note)+'</div>':'';
+    var nt=(g.tasks||[]).filter(function(t){return (t.title||"").trim();}).length;
+    var chip=nt? '<span class="gtaskchip">'+nt+' task'+(nt===1?'':'s')+'</span>':'';
     return '<div class="goalrow'+(isDone?' done':'')+'" data-id="'+g.id+'">'+
       '<button class="gcheck'+(isDone?' on':'')+'" data-action="goal-done" data-id="'+g.id+'" aria-label="Toggle done">'+ICON.check+'</button>'+
-      '<div class="gmain" data-action="goal-edit" data-id="'+g.id+'"><div class="gtitle">'+esc(g.title)+'</div>'+note+'</div>'+
+      '<div class="gmain" data-action="goal-open" data-id="'+g.id+'"><div class="gtitle">'+esc(g.title)+'</div>'+note+chip+'</div>'+
+      '<span class="gopen" data-action="goal-open" data-id="'+g.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>'+
     '</div>';
   }
 
@@ -729,6 +731,139 @@ export function mountApp(root, opts){
       '<textarea class="gnote-in" data-goalf="note" rows="2" placeholder="Notes (optional)">'+esc(ge.note||"")+'</textarea>'+
       '<div class="goaledit-actions">'+delBtn+'<span class="spacer"></span><button class="gcancel" data-action="goal-cancel">Cancel</button><button class="gsave" data-action="goal-save">Save</button></div>'+
     '</div>';
+  }
+
+  /* ============ render: GOAL DETAIL (tasks + move to a day) ============ */
+  function renderGoalDetail(id){
+    var g=(state.goals||[]).filter(function(x){return x.id===id;})[0];
+    if(!g){ state.goalOpen=null; return renderGoals(); }
+    var ar=(state.goalCategories||[]).filter(function(c){return c.id===g.cat;})[0];
+    var dayIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.4"/><path d="M4 9.5h16M12 12.5v5M9.5 15l2.5 2.5 2.5-2.5"/></svg>';
+    var h='<div class="topbar"><button class="iconbtn" data-action="goal-close" aria-label="Back to goals">'+ICON.back+'</button><h1>Goal</h1></div>';
+    h+='<div class="gdetail">';
+    if(ar){ h+='<div class="gdarea"><span class="gcatdot" style="background:'+ar.color+'"></span>'+esc(ar.name)+'</div>'; }
+    h+='<div class="gdhead"><button class="gcheck big'+(g.done?' on':'')+'" data-action="goal-done" data-id="'+g.id+'" aria-label="Toggle done">'+ICON.check+'</button><input class="gdtitle" data-gof="title" data-go="'+g.id+'" value="'+esc(g.title)+'" placeholder="Goal title"></div>';
+    h+='<textarea class="gdnote" data-gof="note" data-go="'+g.id+'" rows="2" placeholder="Notes (optional)">'+esc(g.note||"")+'</textarea>';
+    h+='<div class="gdtaskhead">Tasks</div>';
+    h+='<div class="gdtasks">';
+    var tasks=g.tasks||[];
+    if(!tasks.length){ h+='<p class="gdtaskempty">No tasks yet. Add the steps that move this goal forward, then send them to a day when you are ready to work on them.</p>'; }
+    tasks.forEach(function(tk){
+      h+='<div class="gdtask'+(tk.done?' done':'')+'">';
+      h+='<button class="scheck'+(tk.done?' on':'')+'" data-action="goal-task-done" data-task="'+tk.id+'" aria-label="Toggle done">'+ICON.check+'</button>';
+      h+='<input class="gdtaskin" data-gtf="title" data-gt="'+tk.id+'" value="'+esc(tk.title)+'" placeholder="Task">';
+      h+='<button class="gmovebtn" data-action="goal-move" data-task="'+tk.id+'" aria-label="Move to a day">'+dayIco+'</button>';
+      h+='<button class="gtdel" data-action="goal-task-del" data-task="'+tk.id+'" aria-label="Delete task">'+ICON.x+'</button>';
+      h+='</div>';
+      if(state.goalMove===tk.id){
+        h+='<div class="movepop"><div class="mq">Move to which day?</div><div class="mrow"><button class="mbtn" data-action="goal-move-pick" data-task="'+tk.id+'" data-when="today">Today</button><button class="mbtn" data-action="goal-move-pick" data-task="'+tk.id+'" data-when="tomorrow">Tomorrow</button><label class="mbtn cal">Pick a date<input type="date" data-gmdate="'+tk.id+'"></label></div><button class="mcancel" data-action="goal-move-cancel">Cancel</button></div>';
+      }
+    });
+    h+='</div>';
+    h+='<button class="gdaddtask" data-action="goal-task-add">'+ICON.plus+' Add task</button>';
+    if(state.goalDelConfirm){
+      h+='<div class="gddelrow"><span class="gddelq">Delete this goal and its tasks?</span><button class="gddelyes" data-action="goal-del" data-id="'+g.id+'">Delete</button><button class="gddelno" data-action="goal-del-cancel">Keep</button></div>';
+    } else {
+      h+='<button class="gddelbtn" data-action="goal-del-ask">Delete goal</button>';
+    }
+    h+='</div>';
+    return h;
+  }
+
+  function moveGoalTaskToDate(taskId, dateISO){
+    var g=(state.goals||[]).filter(function(x){return x.id===state.goalOpen;})[0]; if(!g||!g.tasks) return;
+    var task=g.tasks.filter(function(t){return t.id===taskId;})[0]; if(!task) return;
+    var title=(task.title||"").trim();
+    if(!title){ state.goalMove=null; render(true); showToast("Name the task first"); return; }
+    var entry=getEntry(dateISO), slot=-1;
+    for(var i=0;i<entry.tasks.length;i++){ if(!(entry.tasks[i].t||"").trim()){ slot=i; break; } }
+    if(slot>=0){ entry.tasks[slot]={t:title,e:"",a:"",done:false,cat:""}; }
+    else { entry.tasks=entry.tasks.concat([{t:title,e:"",a:"",done:false,cat:""}]); }
+    markDirty(dateISO);
+    g.tasks=g.tasks.filter(function(t){return t.id!==taskId;});
+    scheduleSave();
+    state.goalMove=null; render(true);
+    var lbl=(dateISO===TODAY)?"today":((dateISO===addDays(TODAY,1))?"tomorrow":parseISO(dateISO).toLocaleDateString(undefined,{month:"short",day:"numeric"}));
+    showToast("Moved to "+lbl);
+  }
+
+  /* ============ category plan PDF (upload + inline viewer) ============ */
+  var _planOpen=null, _pdfjs=null;
+  function ensurePdfjs(){
+    if(_pdfjs) return Promise.resolve(_pdfjs);
+    return Promise.all([ import("pdfjs-dist"), import("pdfjs-dist/build/pdf.worker.min.mjs?url") ]).then(function(res){
+      var lib=res[0]; lib.GlobalWorkerOptions.workerSrc=res[1].default; _pdfjs=lib; return lib;
+    });
+  }
+  function pickPlanPdf(catId){
+    if(!opts.planApi){ showToast("PDF storage is not set up yet"); return; }
+    var inp=document.createElement("input"); inp.type="file"; inp.accept="application/pdf,.pdf";
+    inp.onchange=function(){ var f=inp.files&&inp.files[0]; if(f) doUploadPlan(catId,f); };
+    inp.click();
+  }
+  function doUploadPlan(catId,file){
+    if(!opts.planApi){ showToast("PDF storage is not set up yet"); return; }
+    var name=file.name||"plan.pdf";
+    if(file.type!=="application/pdf" && !/\.pdf$/i.test(name)){ showToast("Please choose a PDF file"); return; }
+    if(file.size>10*1024*1024){ showToast("That PDF is over 10 MB"); return; }
+    showToast("Uploading plan\u2026");
+    opts.planApi.upload(catId,file).then(function(){
+      var cat=(state.goalCategories||[]).filter(function(c){return c.id===catId;})[0];
+      if(cat){ cat.plan={name:name,size:file.size,at:new Date().toISOString()}; scheduleSave(); }
+      render(true);
+      if(_planOpen===catId){ refreshPlanBar(catId); renderPlanPdf(catId); }
+      showToast("Plan uploaded");
+    }).catch(function(){ render(true); showToast("Upload failed. Try again."); });
+  }
+  function openPlan(catId){
+    var cat=(state.goalCategories||[]).filter(function(c){return c.id===catId;})[0];
+    if(!cat||!cat.plan){ return; }
+    closePlan();
+    _planOpen=catId;
+    var ov=document.createElement("div"); ov.className="planviewer"; ov.id="planviewer";
+    ov.innerHTML='<div class="vbar"><button class="x" data-pa="plan-close" aria-label="Close">'+ICON.x+'</button><div class="vmeta"><div class="vt">'+esc(cat.name)+' \u00b7 Plan</div><div class="vf">'+esc(cat.plan.name||"Plan.pdf")+'</div></div><button class="more" data-pa="plan-menu" aria-label="More">'+ICON.dots+'</button></div><div class="planmenu" id="planmenu" hidden><button data-pa="plan-replace">Replace PDF</button><button class="rm" data-pa="plan-remove">Remove plan</button></div><div class="vscroll"><div id="planpages"><div class="planloading">Loading plan\u2026</div></div></div>';
+    (screen.parentNode||root).appendChild(ov);
+    ov.addEventListener("click",onPlanClick);
+    renderPlanPdf(catId);
+  }
+  function onPlanClick(e){
+    var t=e.target.closest("[data-pa]"); if(!t) return;
+    var pa=t.dataset.pa;
+    if(pa==="plan-close"){ closePlan(); }
+    else if(pa==="plan-menu"){ var m=document.getElementById("planmenu"); if(m) m.hidden=!m.hidden; }
+    else if(pa==="plan-replace"){ var c=_planOpen; var m2=document.getElementById("planmenu"); if(m2) m2.hidden=true; pickPlanPdf(c); }
+    else if(pa==="plan-remove"){ doRemovePlan(_planOpen); }
+  }
+  function closePlan(){ var ov=document.getElementById("planviewer"); if(ov){ ov.removeEventListener("click",onPlanClick); ov.remove(); } _planOpen=null; }
+  function refreshPlanBar(catId){ var ov=document.getElementById("planviewer"); if(!ov) return; var cat=(state.goalCategories||[]).filter(function(c){return c.id===catId;})[0]; var vf=ov.querySelector(".vf"); if(vf&&cat&&cat.plan) vf.textContent=cat.plan.name||"Plan.pdf"; }
+  function doRemovePlan(catId){
+    if(opts.planApi) opts.planApi.remove(catId).catch(function(){});
+    var cat=(state.goalCategories||[]).filter(function(c){return c.id===catId;})[0];
+    if(cat){ delete cat.plan; scheduleSave(); }
+    closePlan(); render(true); showToast("Plan removed");
+  }
+  function renderPlanPdf(catId){
+    var host=document.getElementById("planpages"); if(!host) return;
+    host.innerHTML='<div class="planloading">Loading plan\u2026</div>';
+    var _buf=null;
+    opts.planApi.load(catId).then(function(blob){ return blob.arrayBuffer(); }).then(function(buf){ _buf=buf; return ensurePdfjs(); }).then(function(lib){
+      return lib.getDocument({data:_buf}).promise;
+    }).then(function(pdf){
+      host.innerHTML="";
+      var cw=host.clientWidth||300, dpr=window.devicePixelRatio||1;
+      var chain=Promise.resolve();
+      var make=function(pn){ return function(){ return pdf.getPage(pn).then(function(page){
+        var v1=page.getViewport({scale:1}), scale=cw/v1.width;
+        var vp=page.getViewport({scale:scale*dpr});
+        var cv=document.createElement("canvas"); cv.className="planpage";
+        cv.width=Math.floor(vp.width); cv.height=Math.floor(vp.height);
+        cv.style.width=cw+"px"; cv.style.height=Math.floor(cw*v1.height/v1.width)+"px";
+        host.appendChild(cv);
+        return page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+      }); }; };
+      for(var p=1;p<=pdf.numPages;p++){ chain=chain.then(make(p)); }
+      return chain;
+    }).catch(function(){ var hh=document.getElementById("planpages"); if(hh) hh.innerHTML='<div class="planloading">Could not load this PDF.</div>'; });
   }
 
   /* ============ render: GOAL CATEGORIES (profile sub-page) ============ */
@@ -779,7 +914,7 @@ export function mountApp(root, opts){
     if(v==="today"){ var _td=state.planTomorrow?addDays(TODAY,1):TODAY; state.activeDate=_td; body=renderDay(_td); }
     else if(v==="day"){ body=renderDay(state.activeDate); }
     else if(v==="journal"){ body=renderJournal(); }
-    else if(v==="goals"){ body=renderGoals(); }
+    else if(v==="goals"){ body = state.goalOpen ? renderGoalDetail(state.goalOpen) : renderGoals(); }
     else if(v==="profile"){ body=renderProfile(); }
     screen.innerHTML = body + brandFooter();
     nav.innerHTML=renderNav();
@@ -896,11 +1031,17 @@ export function mountApp(root, opts){
     } else if(el.dataset.goalf){
       if(state.goalEdit) state.goalEdit[el.dataset.goalf]=el.value;
       if(el.tagName==="TEXTAREA") autosize(el);
+    } else if(el.dataset.gtf){
+      var _gg=(state.goals||[]).filter(function(g){return g.id===state.goalOpen;})[0];
+      if(_gg&&_gg.tasks){ for(var _gi=0;_gi<_gg.tasks.length;_gi++){ if(_gg.tasks[_gi].id===el.dataset.gt){ _gg.tasks[_gi][el.dataset.gtf]=el.value; break; } } }
+    } else if(el.dataset.gof){
+      var _gh=(state.goals||[]).filter(function(g){return g.id===el.dataset.go;})[0];
+      if(_gh){ _gh[el.dataset.gof]=el.value; if(el.tagName==="TEXTAREA") autosize(el); }
     } else if(el.dataset.action==="note"){
       getEntry(state.activeDate).reflection.note=el.value;
     }
     if(el.dataset.g||el.dataset.action==="note") markDirty(state.activeDate);
-    else if(el.dataset.uf||el.dataset.q!==undefined||el.dataset.catf||el.dataset.gcatf) scheduleSave();
+    else if(el.dataset.uf||el.dataset.q!==undefined||el.dataset.catf||el.dataset.gcatf||el.dataset.gtf||el.dataset.gof) scheduleSave();
   }
   screen.addEventListener("input",onInput);
   sheet.addEventListener("input",onInput);
@@ -963,11 +1104,22 @@ export function mountApp(root, opts){
     else if(a==="cancel-del-goalcat"){ state.goalCatDel=null; render(true); }
     else if(a==="del-goalcat"){ var gcid=t.dataset.gcat; state.goalCategories=(state.goalCategories||[]).filter(function(c){return c.id!==gcid;}); state.goals=(state.goals||[]).filter(function(g){return g.cat!==gcid;}); state.goalCatDel=null; scheduleSave(); render(true); showToast("Area removed"); }
     else if(a==="goto-goalcats"){ state.view="profile"; state.profilePage="goalcats"; render(); }
+    else if(a==="plan-add"){ pickPlanPdf(t.dataset.cat); }
+    else if(a==="plan-open"){ openPlan(t.dataset.cat); }
     else if(a==="goal-add"){ state.goalEdit={cat:t.dataset.cat,id:null,title:"",note:""}; render(true); var gin=screen.querySelector('.goaledit [data-goalf="title"]'); if(gin) gin.focus(); }
-    else if(a==="goal-edit"){ var geid=t.dataset.id; var gg=(state.goals||[]).filter(function(x){return x.id===geid;})[0]; if(gg){ state.goalEdit={cat:gg.cat,id:gg.id,title:gg.title,note:gg.note||""}; render(true); var gin2=screen.querySelector('.goaledit [data-goalf="title"]'); if(gin2) gin2.focus(); } }
+    else if(a==="goal-open"){ state.goalOpen=t.dataset.id; state.goalMove=null; state.goalDelConfirm=false; render(true); }
+    else if(a==="goal-close"){ var _gc=(state.goals||[]).filter(function(g){return g.id===state.goalOpen;})[0]; if(_gc&&_gc.tasks){ var _b=_gc.tasks.length; _gc.tasks=_gc.tasks.filter(function(tk){return (tk.title||"").trim();}); if(_gc.tasks.length!==_b) scheduleSave(); } state.goalOpen=null; state.goalMove=null; state.goalDelConfirm=false; render(true); }
+    else if(a==="goal-task-add"){ var _ga=(state.goals||[]).filter(function(g){return g.id===state.goalOpen;})[0]; if(_ga){ if(!_ga.tasks) _ga.tasks=[]; var _ntk={id:"gt"+Date.now().toString(36),title:"",done:false}; _ga.tasks=_ga.tasks.concat([_ntk]); scheduleSave(); render(true); var _tin=screen.querySelector('input[data-gt="'+_ntk.id+'"]'); if(_tin) _tin.focus(); } }
+    else if(a==="goal-task-done"){ var _gt=(state.goals||[]).filter(function(g){return g.id===state.goalOpen;})[0]; if(_gt&&_gt.tasks){ var _tk=_gt.tasks.filter(function(tk){return tk.id===t.dataset.task;})[0]; if(_tk){ _tk.done=!_tk.done; scheduleSave(); render(true); } } }
+    else if(a==="goal-task-del"){ var _gx=(state.goals||[]).filter(function(g){return g.id===state.goalOpen;})[0]; if(_gx&&_gx.tasks){ _gx.tasks=_gx.tasks.filter(function(tk){return tk.id!==t.dataset.task;}); if(state.goalMove===t.dataset.task) state.goalMove=null; scheduleSave(); render(true); } }
+    else if(a==="goal-move"){ state.goalMove=t.dataset.task; render(true); }
+    else if(a==="goal-move-cancel"){ state.goalMove=null; render(true); }
+    else if(a==="goal-move-pick"){ var _iso=(t.dataset.when==="tomorrow")?addDays(TODAY,1):TODAY; moveGoalTaskToDate(t.dataset.task, _iso); }
+    else if(a==="goal-del-ask"){ state.goalDelConfirm=true; render(true); }
+    else if(a==="goal-del-cancel"){ state.goalDelConfirm=false; render(true); }
     else if(a==="goal-cancel"){ state.goalEdit=null; render(true); }
     else if(a==="goal-save"){ var ge=state.goalEdit; if(ge){ var ttl=(ge.title||"").trim(); if(!ttl){ state.goalEdit=null; render(true); } else { if(ge.id){ var ag=(state.goals||[]).filter(function(x){return x.id===ge.id;})[0]; if(ag){ ag.title=ttl; ag.note=ge.note||""; } } else { state.goals=(state.goals||[]).concat([{id:"g"+Date.now().toString(36),cat:ge.cat,title:ttl,note:ge.note||"",done:false}]); } state.goalEdit=null; scheduleSave(); render(true); } } }
-    else if(a==="goal-del"){ var gdid=t.dataset.id; state.goals=(state.goals||[]).filter(function(x){return x.id!==gdid;}); state.goalEdit=null; scheduleSave(); render(true); showToast("Goal deleted"); }
+    else if(a==="goal-del"){ var gdid=t.dataset.id; state.goals=(state.goals||[]).filter(function(x){return x.id!==gdid;}); state.goalEdit=null; state.goalOpen=null; state.goalDelConfirm=false; scheduleSave(); render(true); showToast("Goal deleted"); }
     else if(a==="goal-done"){ var gtid=t.dataset.id; var tg=(state.goals||[]).filter(function(x){return x.id===gtid;})[0]; if(tg){ tg.done=!tg.done; if(tg.done) state.goalsDoneOpen[tg.cat]=true; scheduleSave(); render(true); } }
     else if(a==="goal-done-toggle"){ var gdc=t.dataset.cat; state.goalsDoneOpen[gdc]=!state.goalsDoneOpen[gdc]; render(true); }
     else if(a==="signout"){ if(opts.onSignOut) opts.onSignOut(); }
@@ -975,6 +1127,7 @@ export function mountApp(root, opts){
   screen.addEventListener("click",onClick);
   screen.addEventListener("change",function(e){
     if(e.target.dataset.uf2==="restDay"){ state.user.restDay=e.target.value; scheduleSave(); render(true); }
+    else if(e.target.dataset.gmdate){ if(e.target.value) moveGoalTaskToDate(e.target.dataset.gmdate, e.target.value); }
   });
   sheet.addEventListener("click",onClick);
   sheet.addEventListener("change",function(e){
@@ -984,7 +1137,7 @@ export function mountApp(root, opts){
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
-    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.goalEdit=null; state.goalCatDel=null; state.view=t.dataset.view; render();
+    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.goalEdit=null; state.goalCatDel=null; state.goalOpen=null; state.goalMove=null; state.goalDelConfirm=false; state.view=t.dataset.view; render();
   });
 
   /* install-to-home-screen wiring */
