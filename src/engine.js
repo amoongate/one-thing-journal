@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v34-20260618
+// BUILD: app-phase1-v35-20260618
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -351,6 +351,7 @@ export function mountApp(root, opts){
         '<button class="check'+(p.done?" on":"")+'" data-action="toggle-done" data-g="one" data-i="0" aria-pressed="'+(!!p.done)+'" aria-label="Mark complete">'+ICON.check+'</button>'+
         '<div class="hero-body"><textarea class="t-input" rows="1" data-g="one" data-i="0" data-f="t" placeholder="The task that makes everything else easier…">'+esc(p.t)+'</textarea><div class="tmeta" data-meta="one:0">'+metaInner(p)+'</div></div>'+
       '</div>'+
+      '<div class="dropcue">Release to set as the One Thing</div>'+
     '</div>';
   }
   /* ---- Compact task row ---- */
@@ -1186,6 +1187,12 @@ export function mountApp(root, opts){
     if(_drag){
       e.preventDefault();
       _drag.ghost.style.top=(e.clientY-_drag.offY)+"px";
+      if(_drag.mode==="task" && _drag.hero){
+        var hr=_drag.hero.getBoundingClientRect();
+        var over=(e.clientY>=hr.top && e.clientY<=hr.bottom);
+        if(over!==_drag.overOne){ _drag.overOne=over; _drag.hero.classList.toggle("dropone",over); }
+        if(over) return;
+      }
       var before=_rowBefore(e.clientY);
       if(before!==_drag.orig && before!==_drag.orig.nextSibling){ _rowFlip(before); }
     }
@@ -1200,7 +1207,7 @@ export function mountApp(root, opts){
     ghost.style.width=rect.width+"px"; ghost.style.left=rect.left+"px"; ghost.style.top=rect.top+"px";
     document.body.appendChild(ghost);
     row.classList.add("rowsrc");
-    _drag={orig:row, ghost:ghost, list:ps.list, offY:ps.y-rect.top, rowSel:ps.rowSel, mode:ps.mode};
+    _drag={orig:row, ghost:ghost, list:ps.list, offY:ps.y-rect.top, rowSel:ps.rowSel, mode:ps.mode, hero:(ps.mode==="task"?screen.querySelector(".hero"):null), overOne:false};
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     if(navigator.vibrate){ try{navigator.vibrate(12);}catch(err){} }
     document.body.classList.add("rowreorder");
@@ -1227,6 +1234,18 @@ export function mountApp(root, opts){
     _drag.ghost.remove();
     _drag.orig.classList.remove("rowsrc");
     document.body.classList.remove("rowreorder");
+    if(_drag.hero) _drag.hero.classList.remove("dropone");
+    if(_drag.mode==="task" && _drag.overOne){
+      var di=parseInt(_drag.orig.getAttribute("data-i"),10);
+      var de=getEntry(state.activeDate);
+      if(!isNaN(di) && de.tasks[di]){
+        var promoted=de.tasks[di], oldOne=de.one;
+        de.one=promoted; de.tasks.splice(di,1);
+        if(oldOne && (oldOne.t||"").trim()){ de.tasks.splice(di,0,oldOne); }
+        markDirty(state.activeDate);
+      }
+      _drag=null; _dragEndAt=Date.now(); render(true); return;
+    }
     if(_drag.mode==="goal"){
       var ids=[]; _drag.list.querySelectorAll(".goalrow").forEach(function(r){ ids.push(r.getAttribute("data-id")); });
       var idset={}; ids.forEach(function(id){ idset[id]=true; });

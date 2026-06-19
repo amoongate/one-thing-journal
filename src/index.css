@@ -530,6 +530,10 @@
   .weeknav .wlabel{flex:1 1 auto;text-align:center;min-width:0;}
   .weeknav .wl1{font-family:"Spectral",serif;font-weight:600;font-size:17px;color:var(--ink);}
   .weeknav .wl2{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.3px;color:var(--ink-faint);margin-top:2px;}
+  /* drag a task onto the One Thing to promote it */
+  .hero.dropone{box-shadow:0 0 0 2px var(--blue);}
+  .dropcue{display:none;margin-top:10px;font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.3px;color:var(--blue);text-align:center;}
+  .hero.dropone .dropcue{display:block;}
   /* inline PDF viewer overlay */
   .planviewer{position:absolute;inset:0;z-index:80;background:var(--paper-2);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);}
   .planviewer .vbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--paper);border-bottom:1px solid var(--rule);}
