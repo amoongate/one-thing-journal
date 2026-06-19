@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v33-20260617
+// BUILD: app-phase1-v34-20260618
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -73,6 +73,7 @@ export function mountApp(root, opts){
     move: null,             /* {g,i} of the task being rescheduled */
     catDel: null,           /* category id pending delete confirmation */
     summaryPeriod: "week",  /* journal summary scope: week | month | ytd */
+    weekOffset: 0,          /* journal top week stepper: 0=this week, +n=future */
     planTomorrow: false,    /* Today tab: plan tomorrow instead of today */
     profilePage: null,      /* Profile sub-page: null hub | account | motivation | categories */
     overrideRest: {},       /* dates where the user chose to plan despite it being a rest day */
@@ -446,9 +447,16 @@ export function mountApp(root, opts){
     var curWS=weekStart(TODAY);
     var h='<div class="topbar"><h1>Journal</h1><span class="sub">'+Object.keys(entries).length+' entries</span>'+sigMark()+'</div><div class="pad" style="padding-top:0">';
 
-    /* current week: always shown, expanded */
-    h+='<div class="sec-head" style="padding-left:0"><h2>This week</h2><span class="cap">'+fmtRange(curWS)+'</span></div>';
-    h+=weekCard(curWS,true,true);
+    /* week navigator: this week and forward (past lives in the Archive below) */
+    var _woff=state.weekOffset||0;
+    var _viewWS=addDays(curWS,_woff*7);
+    var _wlab=_woff===0?"This week":(_woff===1?"Next week":"In "+_woff+" weeks");
+    var _pIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+    var _nIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+    h+='<div class="weeknav"><button class="wnav'+(_woff<=0?" off":"")+'" data-action="week-prev" aria-label="Previous week"'+(_woff<=0?" disabled":"")+'>'+_pIco+'</button>'+
+       '<div class="wlabel"><div class="wl1">'+_wlab+'</div><div class="wl2">'+fmtRange(_viewWS)+'</div></div>'+
+       '<button class="wnav" data-action="week-next" aria-label="Next week">'+_nIco+'</button></div>';
+    h+=weekCard(_viewWS,true,true);
 
     /* archive: past days grouped Year > Month, with week dividers inside */
     var pastDates=Object.keys(entries).filter(function(d){return d<curWS;}).sort().reverse();
@@ -809,7 +817,7 @@ export function mountApp(root, opts){
     showToast("Uploading plan\u2026");
     opts.planApi.upload(catId,file).then(function(){
       var cat=(state.goalCategories||[]).filter(function(c){return c.id===catId;})[0];
-      if(cat){ cat.plan={name:name,size:file.size,at:new Date().toISOString()}; scheduleSave(); }
+      if(cat){ cat.plan={name:name,size:file.size,at:new Date().toISOString()}; if(_saveT){ clearTimeout(_saveT); _saveT=null; } flushSave(); }
       render(true);
       if(_planOpen===catId){ refreshPlanBar(catId); renderPlanPdf(catId); }
       showToast("Plan uploaded");
@@ -839,7 +847,7 @@ export function mountApp(root, opts){
   function doRemovePlan(catId){
     if(opts.planApi) opts.planApi.remove(catId).catch(function(){});
     var cat=(state.goalCategories||[]).filter(function(c){return c.id===catId;})[0];
-    if(cat){ delete cat.plan; scheduleSave(); }
+    if(cat){ delete cat.plan; if(_saveT){ clearTimeout(_saveT); _saveT=null; } flushSave(); }
     closePlan(); render(true); showToast("Plan removed");
   }
   function renderPlanPdf(catId){
@@ -1090,6 +1098,8 @@ export function mountApp(root, opts){
     else if(a==="toggle-week"){ var ws=t.dataset.ws; state.openWeeks[ws]=!state.openWeeks[ws]; render(true); }
     else if(a==="toggle-month"){ var mk=t.dataset.mk; state.openMonths[mk]=!state.openMonths[mk]; render(true); }
     else if(a==="sum-period"){ state.summaryPeriod=t.dataset.p; render(true); }
+    else if(a==="week-prev"){ if((state.weekOffset||0)>0){ state.weekOffset=(state.weekOffset||0)-1; render(true); } }
+    else if(a==="week-next"){ state.weekOffset=(state.weekOffset||0)+1; render(true); }
     else if(a==="toggle-pw"){ state.showPw=!state.showPw; render(true); }
     else if(a==="save-profile"){ scheduleSave(); t.classList.add("done"); t.textContent="Saved ✓"; setTimeout(function(){t.classList.remove("done");t.textContent="Save changes";},1400); }
     else if(a==="plan-rest"){ state.overrideRest[t.dataset.date]=true; render(true); }
@@ -1137,7 +1147,7 @@ export function mountApp(root, opts){
 
   nav.addEventListener("click",function(e){
     var t=e.target.closest("[data-action='nav']"); if(!t) return;
-    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.goalEdit=null; state.goalCatDel=null; state.goalOpen=null; state.goalMove=null; state.goalDelConfirm=false; state.view=t.dataset.view; render();
+    state.move=null; state.installSheet=false; state.catDel=null; state.planTomorrow=false; state.profilePage=null; state.goalEdit=null; state.goalCatDel=null; state.goalOpen=null; state.goalMove=null; state.goalDelConfirm=false; state.weekOffset=0; state.view=t.dataset.view; render();
   });
 
   /* install-to-home-screen wiring */

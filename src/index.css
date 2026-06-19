@@ -522,6 +522,14 @@
   .plan svg{width:13px;height:13px;}
   .plan.has{color:var(--blue);background:rgba(44,74,135,.1);border:1px solid rgba(44,74,135,.28);}
   .plan.none{color:var(--ink-faint);background:transparent;border:1px dashed var(--rule-strong);}
+  /* journal week navigator */
+  .weeknav{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .weeknav .wnav{width:34px;height:34px;border:1px solid var(--rule-strong);background:var(--paper);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);flex:0 0 auto;cursor:pointer;}
+  .weeknav .wnav svg{width:17px;height:17px;}
+  .weeknav .wnav.off{opacity:.32;cursor:default;}
+  .weeknav .wlabel{flex:1 1 auto;text-align:center;min-width:0;}
+  .weeknav .wl1{font-family:"Spectral",serif;font-weight:600;font-size:17px;color:var(--ink);}
+  .weeknav .wl2{font-family:"Space Mono",monospace;font-size:10.5px;letter-spacing:.3px;color:var(--ink-faint);margin-top:2px;}
   /* inline PDF viewer overlay */
   .planviewer{position:absolute;inset:0;z-index:80;background:var(--paper-2);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);}
   .planviewer .vbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--paper);border-bottom:1px solid var(--rule);}
