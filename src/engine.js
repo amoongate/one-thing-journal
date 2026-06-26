@@ -1,4 +1,4 @@
-// BUILD: app-phase1-v35-20260618
+// BUILD: app-phase1-v36-20260618
 // App engine: the approved One Thing Journal logic, adapted to run on live
 // Supabase data and to persist changes. Mounted by App.jsx into a container.
 import { SIG, DEFAULT_QUOTES, DEFAULT_CATS, DEFAULT_GOAL_CATS } from "./assets";
@@ -1209,6 +1209,7 @@ export function mountApp(root, opts){
     row.classList.add("rowsrc");
     _drag={orig:row, ghost:ghost, list:ps.list, offY:ps.y-rect.top, rowSel:ps.rowSel, mode:ps.mode, hero:(ps.mode==="task"?screen.querySelector(".hero"):null), overOne:false};
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    try{ var _sel=window.getSelection&&window.getSelection(); if(_sel&&_sel.removeAllRanges) _sel.removeAllRanges(); }catch(_e){}
     if(navigator.vibrate){ try{navigator.vibrate(12);}catch(err){} }
     document.body.classList.add("rowreorder");
   }
